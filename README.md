@@ -1,4 +1,4 @@
-# Phaser 网页小游戏框架
+# Phaser 网页小游戏
 
 基于 **Vite + Phaser 3 + 原生 JavaScript** 的纯网页小游戏合集，包含俄罗斯方块、贪吃蛇、玛丽跳跃和坦克大战。
 
