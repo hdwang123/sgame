@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  font-family: 'Chakra Petch', system-ui, sans-serif;
+  background: #05060b;
+  color: #f1f3ff;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 18% 15%, rgba(76, 110, 245, 0.16), transparent 30rem),
+    radial-gradient(circle at 85% 82%, rgba(12, 166, 120, 0.10), transparent 28rem),
+    #05060b;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.app-shell {
+  width: min(940px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 30px 0 24px;
+}
+
+.brand { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.brand-mark { width: 46px; height: 46px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; transform: rotate(2deg); }
+.brand-mark i { display: block; border-radius: 3px; background: #5c7cfa; box-shadow: 0 0 16px rgba(92,124,250,.4); }
+.brand-mark i:nth-child(2) { background: #c77dff; }
+.brand-mark i:nth-child(3) { background: #38d9ff; }
+.brand-mark i:nth-child(4) { background: #69db7c; }
+.eyebrow { margin: 0 0 2px; color: #697196; font-size: 10px; letter-spacing: .24em; }
+h1 { margin: 0; font-size: clamp(24px, 4vw, 36px); line-height: 1; letter-spacing: .06em; }
+h1 span { color: #748ffc; }
+
+.game-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(120, 138, 205, .24);
+  border-radius: 18px;
+  background: rgba(10, 12, 23, .78);
+  box-shadow: 0 28px 80px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.04);
+  backdrop-filter: blur(18px);
+}
+
+.game-card::before { content: ''; display: block; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inset 0 0 60px rgba(83, 104, 200, .06); z-index: 2; }
+#game-container { width: 100%; aspect-ratio: 860 / 680; }
+#game-container canvas { display: block; width: 100% !important; height: 100% !important; }
+
+footer { display: flex; justify-content: space-between; padding: 14px 4px 0; color: #59617d; font-size: 11px; letter-spacing: .12em; }
+.status { color: #6d789a; }
+.status b { display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: #51cf66; box-shadow: 0 0 10px #51cf66; }
+
+.touch-controls { display: none; }
+.touch-controls button {
+  appearance: none;
+  border: 1px solid rgba(119, 139, 210, .45);
+  color: #dce4ff;
+  background: linear-gradient(145deg, rgba(37, 45, 76, .96), rgba(18, 22, 41, .96));
+  box-shadow: inset 0 1px rgba(255,255,255,.08), 0 7px 18px rgba(0,0,0,.25);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.touch-controls button.is-pressed {
+  transform: scale(.92);
+  border-color: #69dbff;
+  background: linear-gradient(145deg, #36548b, #202b50);
+  box-shadow: 0 0 18px rgba(56, 217, 255, .25), inset 0 2px 6px rgba(0,0,0,.35);
+}
+
+@media (pointer: coarse), (max-width: 800px) {
+  .touch-controls {
+    display: block;
+    margin-top: 10px;
+    padding: 10px 12px 14px;
+    border: 1px solid rgba(120, 138, 205, .24);
+    border-radius: 14px;
+    background: rgba(10, 13, 25, .86);
+    backdrop-filter: blur(14px);
+  }
+  .touch-controls__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 22px;
+    color: #828dab;
+    font-size: 10px;
+    letter-spacing: .06em;
+  }
+  .touch-indicator { color: #65d9bb; white-space: nowrap; }
+  .touch-indicator b { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #63e6be; box-shadow: 0 0 8px #63e6be; }
+  .touch-controls__body { display: flex; align-items: center; justify-content: space-between; min-height: 150px; margin-top: 5px; }
+  .touch-controls[data-profile="menu"] .touch-controls__body { display: none; }
+  .touch-dpad { display: grid; grid-template: repeat(3, 46px) / repeat(3, 46px); gap: 3px; }
+  .touch-dpad button { width: 46px; height: 46px; border-radius: 12px; font-size: 17px; }
+  .touch-dpad [data-control="up"] { grid-area: 1 / 2; }
+  .touch-dpad [data-control="left"] { grid-area: 2 / 1; }
+  .touch-dpad [data-control="down"] { grid-area: 2 / 2; }
+  .touch-dpad [data-control="right"] { grid-area: 2 / 3; }
+  .touch-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; max-width: 168px; }
+  .touch-actions button { width: 68px; height: 68px; border-radius: 50%; display: grid; place-content: center; gap: 2px; }
+  .touch-actions button strong { font-size: 18px; line-height: 1; }
+  .touch-actions button span { color: #8f9bbc; font: 9px/1 'Chakra Petch', sans-serif; }
+  .touch-actions button.touch-small { width: 46px; height: 46px; }
+  .touch-actions button.touch-small strong { font-size: 14px; }
+  .touch-actions button[hidden], .touch-dpad button[hidden] { display: none; }
+}
+
+@media (max-width: 600px) {
+  .app-shell { width: 100%; padding: 16px 10px; }
+  .game-card { border-radius: 10px; }
+  .brand { margin-bottom: 12px; }
+  .brand-mark { width: 36px; height: 36px; }
+  .eyebrow { font-size: 8px; }
+  h1 { font-size: 25px; }
+  .touch-controls__head { align-items: flex-start; }
+  footer { font-size: 8px; }
+}

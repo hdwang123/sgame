@@ -1,0 +1,275 @@
+import Phaser from 'phaser';
+import {
+  BOARD_HEIGHT,
+  BOARD_WIDTH,
+  CELL_SIZE,
+  PIECES,
+} from '../game/tetris/config.js';
+import { TetrisGame } from '../game/tetris/TetrisGame.js';
+import { soundFX } from '../audio/SoundFX.js';
+import { mobileControls } from '../ui/MobileControls.js';
+
+const BOARD_X = 72;
+const BOARD_Y = 58;
+const PANEL_X = 418;
+
+export class TetrisScene extends Phaser.Scene {
+  constructor() {
+    super('tetris');
+  }
+
+  create() {
+    this.model = new TetrisGame();
+    this.isPaused = false;
+    this.dropAccumulator = 0;
+    this.touchMoveAccumulator = 0;
+
+    this.createBackdrop();
+    this.createInterface();
+    this.bindControls();
+    this.bindTouchControls();
+    this.draw();
+  }
+
+  createBackdrop() {
+    const grid = this.add.graphics();
+    grid.lineStyle(1, 0x1a1f36, 0.25);
+    for (let x = 0; x <= 860; x += 32) grid.lineBetween(x, 0, x, 680);
+    for (let y = 0; y <= 680; y += 32) grid.lineBetween(0, y, 860, y);
+
+    this.add.circle(760, 80, 180, 0x5f3dc4, 0.09);
+    this.add.circle(55, 620, 150, 0x00d4aa, 0.06);
+  }
+
+  createInterface() {
+    this.boardGlow = this.add.rectangle(
+      BOARD_X + (BOARD_WIDTH * CELL_SIZE) / 2,
+      BOARD_Y + (BOARD_HEIGHT * CELL_SIZE) / 2,
+      BOARD_WIDTH * CELL_SIZE + 12,
+      BOARD_HEIGHT * CELL_SIZE + 12,
+      0x12162a,
+    ).setStrokeStyle(2, 0x4c6ef5, 0.65);
+
+    this.add.rectangle(
+      BOARD_X + (BOARD_WIDTH * CELL_SIZE) / 2,
+      BOARD_Y + (BOARD_HEIGHT * CELL_SIZE) / 2,
+      BOARD_WIDTH * CELL_SIZE,
+      BOARD_HEIGHT * CELL_SIZE,
+      0x070912,
+      0.96,
+    );
+
+    this.boardGraphics = this.add.graphics();
+    this.ghostGraphics = this.add.graphics();
+    this.pieceGraphics = this.add.graphics();
+
+    this.add.text(PANEL_X, 62, 'NEXT SIGNAL', this.labelStyle());
+    this.add.rectangle(PANEL_X + 140, 137, 280, 118, 0x101427, 0.82)
+      .setStrokeStyle(1, 0x343a60, 0.8);
+    this.nextGraphics = this.add.graphics();
+
+    this.add.text(PANEL_X, 222, 'SCORE', this.labelStyle());
+    this.scoreText = this.add.text(PANEL_X, 246, '000000', {
+      fontFamily: 'Arial Black, Arial', fontSize: '40px', color: '#f8f9ff',
+    });
+
+    this.add.text(PANEL_X, 320, 'LINES', this.labelStyle());
+    this.linesText = this.add.text(PANEL_X, 344, '00', this.valueStyle());
+    this.add.text(PANEL_X + 142, 320, 'LEVEL', this.labelStyle());
+    this.levelText = this.add.text(PANEL_X + 142, 344, '01', this.valueStyle());
+
+    this.add.line(PANEL_X + 140, 413, 0, 0, 280, 0, 0x343a60, 0.9);
+    this.add.text(PANEL_X, 438, 'CONTROLS', this.labelStyle());
+    this.addControl('←  →', '移动方块', 474);
+    this.addControl('↑ / Z', '旋转方块', 510);
+    this.addControl('↓', '加速下落', 546);
+    this.addControl('SPACE', '直接落下', 582);
+    this.addControl('P', '暂停游戏', 608);
+    this.addControl('ESC', '返回游戏厅', 638);
+
+    this.overlay = this.add.rectangle(BOARD_X + 140, BOARD_Y + 280, 280, 560, 0x070912, 0.86)
+      .setVisible(false).setDepth(20);
+    this.overlayTitle = this.add.text(BOARD_X + 140, BOARD_Y + 248, '', {
+      fontFamily: 'Arial Black, Arial', fontSize: '30px', color: '#ffffff', align: 'center',
+    }).setOrigin(0.5).setDepth(21).setVisible(false);
+    this.overlayHint = this.add.text(BOARD_X + 140, BOARD_Y + 298, '', {
+      fontFamily: 'Arial', fontSize: '14px', color: '#adb5bd', align: 'center',
+    }).setOrigin(0.5).setDepth(21).setVisible(false);
+  }
+
+  labelStyle() {
+    return { fontFamily: 'Arial', fontSize: '13px', color: '#7c86aa', letterSpacing: 2 };
+  }
+
+  valueStyle() {
+    return { fontFamily: 'Arial Black, Arial', fontSize: '28px', color: '#e9ecff' };
+  }
+
+  addControl(key, action, y) {
+    this.add.text(PANEL_X, y, key, {
+      fontFamily: 'Consolas, monospace', fontSize: '13px', color: '#74c0fc',
+      backgroundColor: '#191f39', padding: { x: 7, y: 4 },
+    });
+    this.add.text(PANEL_X + 104, y + 4, action, {
+      fontFamily: 'Arial', fontSize: '13px', color: '#adb5bd',
+    });
+  }
+
+  bindControls() {
+    const keyboard = this.input.keyboard;
+    this.cursors = keyboard.createCursorKeys();
+    this.keys = keyboard.addKeys('Z,SPACE,P,ENTER');
+    keyboard.on('keydown-LEFT', () => this.move(-1));
+    keyboard.on('keydown-RIGHT', () => this.move(1));
+    keyboard.on('keydown-UP', () => this.rotate(1));
+    keyboard.on('keydown-Z', () => this.rotate(-1));
+    keyboard.on('keydown-SPACE', () => this.hardDrop());
+    keyboard.on('keydown-P', () => this.togglePause());
+    keyboard.on('keydown-ENTER', () => {
+      if (this.model.gameOver) this.scene.restart();
+    });
+    keyboard.on('keydown-ESC', () => this.scene.start('menu'));
+  }
+
+  bindTouchControls() {
+    mobileControls.bindScene(this, 'tetris', {
+      left: () => this.move(-1),
+      right: () => this.move(1),
+      primary: () => this.rotate(1),
+      secondary: () => this.hardDrop(),
+      pause: () => this.togglePause(),
+      home: () => this.scene.start('menu'),
+    });
+  }
+
+  update(_, delta) {
+    if (this.isPaused || this.model.gameOver) return;
+    const touchDirection = mobileControls.isDown('left') ? -1 : mobileControls.isDown('right') ? 1 : 0;
+    if (touchDirection) {
+      this.touchMoveAccumulator += delta;
+      if (this.touchMoveAccumulator >= 110) {
+        this.move(touchDirection);
+        this.touchMoveAccumulator = 0;
+      }
+    } else this.touchMoveAccumulator = 0;
+    this.dropAccumulator += delta;
+    const softDropping = this.cursors.down.isDown || mobileControls.isDown('down');
+    if (this.dropAccumulator >= (softDropping ? 45 : this.model.dropInterval)) {
+      const result = this.model.tick(softDropping);
+      this.handleModelResult(result);
+      this.dropAccumulator = 0;
+      this.updateStats();
+      this.draw();
+    }
+  }
+
+  move(direction) {
+    if (!this.canPlay()) return;
+    if (this.model.move(direction)) {
+      soundFX.play('move');
+      this.draw();
+    }
+  }
+
+  rotate(direction) {
+    if (!this.canPlay()) return;
+    if (this.model.rotate(direction)) {
+      soundFX.play('rotate');
+      this.draw();
+    }
+  }
+
+  hardDrop() {
+    if (!this.canPlay()) return;
+    this.handleModelResult(this.model.hardDrop());
+    this.dropAccumulator = 0;
+    this.updateStats();
+    this.draw();
+  }
+
+  handleModelResult(result) {
+    if (result.cleared) {
+      soundFX.play('line');
+      this.cameras.main.flash(120, 90, 140, 255, false);
+    } else if (result.locked) soundFX.play('drop');
+    if (this.model.gameOver) this.endGame();
+  }
+
+  draw() {
+    this.boardGraphics.clear();
+    this.ghostGraphics.clear();
+    this.pieceGraphics.clear();
+    this.nextGraphics.clear();
+
+    for (let y = 0; y < BOARD_HEIGHT; y += 1) {
+      for (let x = 0; x < BOARD_WIDTH; x += 1) {
+        const color = this.model.board[y][x];
+        if (color) this.drawCell(this.boardGraphics, BOARD_X, BOARD_Y, x, y, color);
+        else {
+          this.boardGraphics.lineStyle(1, 0x222944, 0.42);
+          this.boardGraphics.strokeRect(BOARD_X + x * CELL_SIZE, BOARD_Y + y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        }
+      }
+    }
+
+    const activePiece = this.model.activePiece;
+    if (!activePiece) return;
+    const ghostY = this.model.ghostY();
+    activePiece.cells.forEach(([cx, cy]) => {
+      const gy = ghostY + cy;
+      if (gy >= 0) this.drawGhostCell(this.ghostGraphics, activePiece.x + cx, gy, activePiece.color);
+      const py = activePiece.y + cy;
+      if (py >= 0) this.drawCell(this.pieceGraphics, BOARD_X, BOARD_Y, activePiece.x + cx, py, activePiece.color);
+    });
+
+    const preview = PIECES[this.model.nextPiece];
+    const minX = Math.min(...preview.cells.map(([x]) => x));
+    const maxX = Math.max(...preview.cells.map(([x]) => x));
+    preview.cells.forEach(([x, y]) => {
+      this.drawCell(this.nextGraphics, PANEL_X + 91 - ((maxX - minX + 1) * 24) / 2, 108, x - minX, y, preview.color, 24);
+    });
+  }
+
+  drawCell(graphics, originX, originY, x, y, color, size = CELL_SIZE) {
+    const px = originX + x * size;
+    const py = originY + y * size;
+    graphics.fillStyle(color, 1);
+    graphics.fillRoundedRect(px + 2, py + 2, size - 4, size - 4, 4);
+    graphics.fillStyle(0xffffff, 0.22);
+    graphics.fillRoundedRect(px + 4, py + 4, size - 8, 4, 2);
+    graphics.lineStyle(1, 0xffffff, 0.15);
+    graphics.strokeRoundedRect(px + 2, py + 2, size - 4, size - 4, 4);
+  }
+
+  drawGhostCell(graphics, x, y, color) {
+    graphics.lineStyle(2, color, 0.4);
+    graphics.strokeRoundedRect(BOARD_X + x * CELL_SIZE + 4, BOARD_Y + y * CELL_SIZE + 4, CELL_SIZE - 8, CELL_SIZE - 8, 3);
+  }
+
+  updateStats() {
+    this.scoreText.setText(String(this.model.score).padStart(6, '0'));
+    this.linesText.setText(String(this.model.lines).padStart(2, '0'));
+    this.levelText.setText(String(this.model.level).padStart(2, '0'));
+  }
+
+  togglePause() {
+    if (this.model.gameOver) return;
+    this.isPaused = !this.isPaused;
+    this.setOverlay(this.isPaused, 'PAUSED', '按 P 继续游戏');
+  }
+
+  endGame() {
+    soundFX.play('lose');
+    this.setOverlay(true, 'GAME OVER', `最终得分 ${this.model.score}\n按 ENTER 重新开始`);
+  }
+
+  setOverlay(visible, title, hint) {
+    this.overlay.setVisible(visible);
+    this.overlayTitle.setText(title).setVisible(visible);
+    this.overlayHint.setText(hint).setVisible(visible);
+  }
+
+  canPlay() {
+    return !this.isPaused && !this.model.gameOver && this.model.activePiece;
+  }
+}
