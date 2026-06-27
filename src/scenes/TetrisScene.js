@@ -19,6 +19,12 @@ export class TetrisScene extends Phaser.Scene {
   }
 
   create() {
+    this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
+    this.scale.resize(this.isMobileLayout ? 620 : 860, 680);
+    this.boardX = this.isMobileLayout ? 20 : BOARD_X;
+    this.boardY = BOARD_Y;
+    this.cellSize = CELL_SIZE;
+    this.panelX = this.isMobileLayout ? 320 : PANEL_X;
     this.model = new TetrisGame();
     this.isPaused = false;
     this.dropAccumulator = 0;
@@ -34,27 +40,33 @@ export class TetrisScene extends Phaser.Scene {
   createBackdrop() {
     const grid = this.add.graphics();
     grid.lineStyle(1, 0x1a1f36, 0.25);
-    for (let x = 0; x <= 860; x += 32) grid.lineBetween(x, 0, x, 680);
-    for (let y = 0; y <= 680; y += 32) grid.lineBetween(0, y, 860, y);
+    for (let x = 0; x <= this.scale.width; x += 32) grid.lineBetween(x, 0, x, this.scale.height);
+    for (let y = 0; y <= this.scale.height; y += 32) grid.lineBetween(0, y, this.scale.width, y);
 
-    this.add.circle(760, 80, 180, 0x5f3dc4, 0.09);
-    this.add.circle(55, 620, 150, 0x00d4aa, 0.06);
+    this.add.circle(this.scale.width - 70, 80, 180, 0x5f3dc4, 0.09);
+    this.add.circle(55, this.scale.height - 60, 150, 0x00d4aa, 0.06);
   }
 
   createInterface() {
+    this.add.text(this.panelX, 18, '俄罗斯方块', {
+      fontFamily: 'Arial Black, Arial', fontSize: '25px', color: '#f4f6ff',
+    });
+    this.add.text(this.panelX + 2, 47, 'NEON BLOCKS', {
+      fontFamily: 'Arial', fontSize: '9px', color: '#748ffc', letterSpacing: 2,
+    });
     this.boardGlow = this.add.rectangle(
-      BOARD_X + (BOARD_WIDTH * CELL_SIZE) / 2,
-      BOARD_Y + (BOARD_HEIGHT * CELL_SIZE) / 2,
-      BOARD_WIDTH * CELL_SIZE + 12,
-      BOARD_HEIGHT * CELL_SIZE + 12,
+      this.boardX + (BOARD_WIDTH * this.cellSize) / 2,
+      this.boardY + (BOARD_HEIGHT * this.cellSize) / 2,
+      BOARD_WIDTH * this.cellSize + 12,
+      BOARD_HEIGHT * this.cellSize + 12,
       0x12162a,
     ).setStrokeStyle(2, 0x4c6ef5, 0.65);
 
     this.add.rectangle(
-      BOARD_X + (BOARD_WIDTH * CELL_SIZE) / 2,
-      BOARD_Y + (BOARD_HEIGHT * CELL_SIZE) / 2,
-      BOARD_WIDTH * CELL_SIZE,
-      BOARD_HEIGHT * CELL_SIZE,
+      this.boardX + (BOARD_WIDTH * this.cellSize) / 2,
+      this.boardY + (BOARD_HEIGHT * this.cellSize) / 2,
+      BOARD_WIDTH * this.cellSize,
+      BOARD_HEIGHT * this.cellSize,
       0x070912,
       0.96,
     );
@@ -63,23 +75,23 @@ export class TetrisScene extends Phaser.Scene {
     this.ghostGraphics = this.add.graphics();
     this.pieceGraphics = this.add.graphics();
 
-    this.add.text(PANEL_X, 62, 'NEXT SIGNAL', this.labelStyle());
-    this.add.rectangle(PANEL_X + 140, 137, 280, 118, 0x101427, 0.82)
+    this.add.text(this.panelX, 62, '下一个 / NEXT', this.labelStyle());
+    this.add.rectangle(this.panelX + 140, 137, 280, 118, 0x101427, 0.82)
       .setStrokeStyle(1, 0x343a60, 0.8);
     this.nextGraphics = this.add.graphics();
 
-    this.add.text(PANEL_X, 222, 'SCORE', this.labelStyle());
-    this.scoreText = this.add.text(PANEL_X, 246, '000000', {
+    this.add.text(this.panelX, 222, '分数 / SCORE', this.labelStyle());
+    this.scoreText = this.add.text(this.panelX, 246, '000000', {
       fontFamily: 'Arial Black, Arial', fontSize: '40px', color: '#f8f9ff',
     });
 
-    this.add.text(PANEL_X, 320, 'LINES', this.labelStyle());
-    this.linesText = this.add.text(PANEL_X, 344, '00', this.valueStyle());
-    this.add.text(PANEL_X + 142, 320, 'LEVEL', this.labelStyle());
-    this.levelText = this.add.text(PANEL_X + 142, 344, '01', this.valueStyle());
+    this.add.text(this.panelX, 320, '消除行 / LINES', this.labelStyle());
+    this.linesText = this.add.text(this.panelX, 344, '00', this.valueStyle());
+    this.add.text(this.panelX + 142, 320, '等级 / LEVEL', this.labelStyle());
+    this.levelText = this.add.text(this.panelX + 142, 344, '01', this.valueStyle());
 
-    this.add.line(PANEL_X + 140, 413, 0, 0, 280, 0, 0x343a60, 0.9);
-    this.add.text(PANEL_X, 438, 'CONTROLS', this.labelStyle());
+    this.add.line(this.panelX + 140, 413, 0, 0, 280, 0, 0x343a60, 0.9);
+    this.add.text(this.panelX, 438, '操作 / CONTROLS', this.labelStyle());
     this.addControl('←  →', '移动方块', 474);
     this.addControl('↑ / Z', '旋转方块', 510);
     this.addControl('↓', '加速下落', 546);
@@ -87,12 +99,12 @@ export class TetrisScene extends Phaser.Scene {
     this.addControl('P', '暂停游戏', 608);
     this.addControl('ESC', '返回游戏厅', 638);
 
-    this.overlay = this.add.rectangle(BOARD_X + 140, BOARD_Y + 280, 280, 560, 0x070912, 0.86)
+    this.overlay = this.add.rectangle(this.boardX + 140, this.boardY + 280, 280, 560, 0x070912, 0.86)
       .setVisible(false).setDepth(20);
-    this.overlayTitle = this.add.text(BOARD_X + 140, BOARD_Y + 248, '', {
+    this.overlayTitle = this.add.text(this.boardX + 140, this.boardY + 248, '', {
       fontFamily: 'Arial Black, Arial', fontSize: '30px', color: '#ffffff', align: 'center',
     }).setOrigin(0.5).setDepth(21).setVisible(false);
-    this.overlayHint = this.add.text(BOARD_X + 140, BOARD_Y + 298, '', {
+    this.overlayHint = this.add.text(this.boardX + 140, this.boardY + 298, '', {
       fontFamily: 'Arial', fontSize: '14px', color: '#adb5bd', align: 'center',
     }).setOrigin(0.5).setDepth(21).setVisible(false);
   }
@@ -106,11 +118,11 @@ export class TetrisScene extends Phaser.Scene {
   }
 
   addControl(key, action, y) {
-    this.add.text(PANEL_X, y, key, {
+    this.add.text(this.panelX, y, key, {
       fontFamily: 'Consolas, monospace', fontSize: '13px', color: '#74c0fc',
       backgroundColor: '#191f39', padding: { x: 7, y: 4 },
     });
-    this.add.text(PANEL_X + 104, y + 4, action, {
+    this.add.text(this.panelX + 104, y + 4, action, {
       fontFamily: 'Arial', fontSize: '13px', color: '#adb5bd',
     });
   }
@@ -138,6 +150,7 @@ export class TetrisScene extends Phaser.Scene {
       primary: () => this.rotate(1),
       secondary: () => this.hardDrop(),
       pause: () => this.togglePause(),
+      restart: () => this.scene.restart(),
       home: () => this.scene.start('menu'),
     });
   }
@@ -204,10 +217,15 @@ export class TetrisScene extends Phaser.Scene {
     for (let y = 0; y < BOARD_HEIGHT; y += 1) {
       for (let x = 0; x < BOARD_WIDTH; x += 1) {
         const color = this.model.board[y][x];
-        if (color) this.drawCell(this.boardGraphics, BOARD_X, BOARD_Y, x, y, color);
+        if (color) this.drawCell(this.boardGraphics, this.boardX, this.boardY, x, y, color);
         else {
           this.boardGraphics.lineStyle(1, 0x222944, 0.42);
-          this.boardGraphics.strokeRect(BOARD_X + x * CELL_SIZE, BOARD_Y + y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          this.boardGraphics.strokeRect(
+            this.boardX + x * this.cellSize,
+            this.boardY + y * this.cellSize,
+            this.cellSize,
+            this.cellSize,
+          );
         }
       }
     }
@@ -219,18 +237,22 @@ export class TetrisScene extends Phaser.Scene {
       const gy = ghostY + cy;
       if (gy >= 0) this.drawGhostCell(this.ghostGraphics, activePiece.x + cx, gy, activePiece.color);
       const py = activePiece.y + cy;
-      if (py >= 0) this.drawCell(this.pieceGraphics, BOARD_X, BOARD_Y, activePiece.x + cx, py, activePiece.color);
+      if (py >= 0) this.drawCell(this.pieceGraphics, this.boardX, this.boardY, activePiece.x + cx, py, activePiece.color);
     });
 
     const preview = PIECES[this.model.nextPiece];
     const minX = Math.min(...preview.cells.map(([x]) => x));
     const maxX = Math.max(...preview.cells.map(([x]) => x));
+    const previewSize = 24;
+    const previewCenterX = this.panelX + 91;
+    const previewY = 108;
+    const previewX = previewCenterX - ((maxX - minX + 1) * previewSize) / 2;
     preview.cells.forEach(([x, y]) => {
-      this.drawCell(this.nextGraphics, PANEL_X + 91 - ((maxX - minX + 1) * 24) / 2, 108, x - minX, y, preview.color, 24);
+      this.drawCell(this.nextGraphics, previewX, previewY, x - minX, y, preview.color, previewSize);
     });
   }
 
-  drawCell(graphics, originX, originY, x, y, color, size = CELL_SIZE) {
+  drawCell(graphics, originX, originY, x, y, color, size = this.cellSize) {
     const px = originX + x * size;
     const py = originY + y * size;
     graphics.fillStyle(color, 1);
@@ -243,7 +265,13 @@ export class TetrisScene extends Phaser.Scene {
 
   drawGhostCell(graphics, x, y, color) {
     graphics.lineStyle(2, color, 0.4);
-    graphics.strokeRoundedRect(BOARD_X + x * CELL_SIZE + 4, BOARD_Y + y * CELL_SIZE + 4, CELL_SIZE - 8, CELL_SIZE - 8, 3);
+    graphics.strokeRoundedRect(
+      this.boardX + x * this.cellSize + 4,
+      this.boardY + y * this.cellSize + 4,
+      this.cellSize - 8,
+      this.cellSize - 8,
+      3,
+    );
   }
 
   updateStats() {
@@ -255,12 +283,12 @@ export class TetrisScene extends Phaser.Scene {
   togglePause() {
     if (this.model.gameOver) return;
     this.isPaused = !this.isPaused;
-    this.setOverlay(this.isPaused, 'PAUSED', '按 P 继续游戏');
+    this.setOverlay(this.isPaused, '暂停 / PAUSED', '按 P 或触摸暂停键继续');
   }
 
   endGame() {
     soundFX.play('lose');
-    this.setOverlay(true, 'GAME OVER', `最终得分 ${this.model.score}\n按 ENTER 重新开始`);
+    this.setOverlay(true, '游戏结束', `GAME OVER  ·  得分 ${this.model.score}\n按 ENTER 重新开始`);
   }
 
   setOverlay(visible, title, hint) {

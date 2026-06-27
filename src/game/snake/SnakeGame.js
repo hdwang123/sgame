@@ -1,10 +1,11 @@
-import { SNAKE_RULES } from './config.js';
+import { SNAKE_RULES, SNAKE_SPEEDS } from './config.js';
 
 export class SnakeGame {
-  constructor({ columns = SNAKE_RULES.columns, rows = SNAKE_RULES.rows, random = Math.random } = {}) {
+  constructor({ columns = SNAKE_RULES.columns, rows = SNAKE_RULES.rows, random = Math.random, speed = 'normal' } = {}) {
     this.columns = columns;
     this.rows = rows;
     this.random = random;
+    this.speedKey = speed;
     this.reset();
   }
 
@@ -15,7 +16,8 @@ export class SnakeGame {
     this.direction = { x: 1, y: 0 };
     this.nextDirection = { x: 1, y: 0 };
     this.score = 0;
-    this.speed = SNAKE_RULES.initialSpeed;
+    this.foodsEaten = 0;
+    this.updateSpeed();
     this.gameOver = false;
     this.spawnFood();
   }
@@ -39,10 +41,26 @@ export class SnakeGame {
     const ate = head.x === this.food.x && head.y === this.food.y;
     if (ate) {
       this.score += SNAKE_RULES.foodScore;
-      this.speed = Math.max(SNAKE_RULES.minimumSpeed, this.speed - SNAKE_RULES.speedStep);
+      this.foodsEaten += 1;
+      this.updateSpeed();
       this.spawnFood();
     } else this.snake.pop();
     return { gameOver: false, ate };
+  }
+
+  setSpeed(speedKey) {
+    if (!SNAKE_SPEEDS[speedKey]) return false;
+    this.speedKey = speedKey;
+    this.updateSpeed();
+    return true;
+  }
+
+  updateSpeed() {
+    const preset = SNAKE_SPEEDS[this.speedKey] ?? SNAKE_SPEEDS.normal;
+    this.speed = Math.max(
+      SNAKE_RULES.minimumSpeed,
+      preset.interval - this.foodsEaten * SNAKE_RULES.speedStep,
+    );
   }
 
   hitsWall(point) {

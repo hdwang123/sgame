@@ -1,6 +1,6 @@
-import { PLATFORMER_RULES } from './config.js';
+import { MARY_JUMP_RULES } from './config.js';
 
-export class PlatformerGame {
+export class MaryJumpGame {
   constructor() {
     this.reset();
   }
@@ -13,13 +13,13 @@ export class PlatformerGame {
 
   collectCoin() {
     if (this.finished) return this.score;
-    this.score += PLATFORMER_RULES.coinScore;
+    this.score += MARY_JUMP_RULES.coinScore;
     return this.score;
   }
 
   defeatEnemy() {
     if (this.finished) return this.score;
-    this.score += PLATFORMER_RULES.enemyScore;
+    this.score += MARY_JUMP_RULES.enemyScore;
     return this.score;
   }
 

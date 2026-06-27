@@ -34,18 +34,17 @@ body::before {
 .app-shell {
   width: min(940px, calc(100vw - 32px));
   margin: 0 auto;
-  padding: 30px 0 24px;
+  padding: 18px 0 20px;
 }
 
-.brand { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-.brand-mark { width: 46px; height: 46px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; transform: rotate(2deg); }
+.brand { display: flex; align-items: center; gap: 11px; margin-bottom: 10px; min-height: 34px; }
+.brand-mark { width: 34px; height: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; transform: rotate(2deg); }
 .brand-mark i { display: block; border-radius: 3px; background: #5c7cfa; box-shadow: 0 0 16px rgba(92,124,250,.4); }
 .brand-mark i:nth-child(2) { background: #c77dff; }
 .brand-mark i:nth-child(3) { background: #38d9ff; }
 .brand-mark i:nth-child(4) { background: #69db7c; }
-.eyebrow { margin: 0 0 2px; color: #697196; font-size: 10px; letter-spacing: .24em; }
-h1 { margin: 0; font-size: clamp(24px, 4vw, 36px); line-height: 1; letter-spacing: .06em; }
-h1 span { color: #748ffc; }
+h1 { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: clamp(22px, 3vw, 30px); line-height: 1; letter-spacing: .04em; }
+h1 span { color: #748ffc; font-size: .38em; font-weight: 600; letter-spacing: .18em; }
 
 .game-card {
   position: relative;
@@ -83,10 +82,20 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   background: linear-gradient(145deg, #36548b, #202b50);
   box-shadow: 0 0 18px rgba(56, 217, 255, .25), inset 0 2px 6px rgba(0,0,0,.35);
 }
+.touch-controls button.is-selected {
+  border-color: #63e6be;
+  color: #e6fff8;
+  background: linear-gradient(145deg, #236c62, #173c42);
+  box-shadow: 0 0 14px rgba(99, 230, 190, .2), inset 0 1px rgba(255,255,255,.1);
+}
+.touch-speed-selector { display: none; }
 
 @media (pointer: coarse), (max-width: 800px) {
   .touch-controls {
     display: block;
+    position: relative;
+    bottom: auto;
+    z-index: 40;
     margin-top: 10px;
     padding: 10px 12px 14px;
     border: 1px solid rgba(120, 138, 205, .24);
@@ -106,30 +115,62 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   }
   .touch-indicator { color: #65d9bb; white-space: nowrap; }
   .touch-indicator b { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #63e6be; box-shadow: 0 0 8px #63e6be; }
-  .touch-controls__body { display: flex; align-items: center; justify-content: space-between; min-height: 150px; margin-top: 5px; }
+  .touch-controls__body { display: flex; align-items: center; justify-content: space-between; min-height: 168px; margin-top: 5px; }
+  body[data-game-profile="snake"] .touch-speed-selector {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+  }
+  .touch-speed-selector span { margin-right: auto; color: #8490af; font-size: 11px; }
+  .touch-speed-selector button { min-width: 66px; height: 38px; padding: 0 10px; border-radius: 19px; font: 12px 'Chakra Petch', sans-serif; }
   .touch-controls[data-profile="menu"] .touch-controls__body { display: none; }
-  .touch-dpad { display: grid; grid-template: repeat(3, 46px) / repeat(3, 46px); gap: 3px; }
-  .touch-dpad button { width: 46px; height: 46px; border-radius: 12px; font-size: 17px; }
+  .touch-dpad { display: grid; grid-template: repeat(3, 52px) / repeat(3, 52px); gap: 5px; }
+  .touch-dpad button { width: 52px; height: 52px; border-radius: 14px; font-size: 19px; }
   .touch-dpad [data-control="up"] { grid-area: 1 / 2; }
   .touch-dpad [data-control="left"] { grid-area: 2 / 1; }
   .touch-dpad [data-control="down"] { grid-area: 2 / 2; }
   .touch-dpad [data-control="right"] { grid-area: 2 / 3; }
-  .touch-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; max-width: 168px; }
-  .touch-actions button { width: 68px; height: 68px; border-radius: 50%; display: grid; place-content: center; gap: 2px; }
-  .touch-actions button strong { font-size: 18px; line-height: 1; }
-  .touch-actions button span { color: #8f9bbc; font: 9px/1 'Chakra Petch', sans-serif; }
-  .touch-actions button.touch-small { width: 46px; height: 46px; }
-  .touch-actions button.touch-small strong { font-size: 14px; }
-  .touch-actions button[hidden], .touch-dpad button[hidden] { display: none; }
+  .touch-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; max-width: 176px; }
+  .touch-actions button { width: 74px; height: 74px; border-radius: 50%; display: grid; place-content: center; gap: 3px; }
+  .touch-actions button strong { font-size: 20px; line-height: 1; }
+  .touch-actions button span { color: #8f9bbc; font: 10px/1 'Chakra Petch', sans-serif; }
+  .touch-actions button.touch-small { width: 50px; height: 50px; }
+  .touch-actions button.touch-small strong { font-size: 15px; }
+  .touch-actions button[hidden], .touch-dpad button[hidden], .touch-speed-selector button[hidden] { display: none; }
+  body[data-game-profile="tetris"] #game-container { aspect-ratio: 620 / 680; }
+  body[data-game-profile="tetris"] .brand,
+  body[data-game-profile="snake"] .brand,
+  body[data-game-profile="maryJump"] .brand,
+  body[data-game-profile="tank"] .brand,
+  body[data-game-profile="tetris"] footer,
+  body[data-game-profile="snake"] footer,
+  body[data-game-profile="maryJump"] footer,
+  body[data-game-profile="tank"] footer { display: none; }
+  body[data-game-profile="tetris"] .app-shell,
+  body[data-game-profile="snake"] .app-shell,
+  body[data-game-profile="maryJump"] .app-shell,
+  body[data-game-profile="tank"] .app-shell { padding-top: 2px; }
+  body[data-game-profile="tetris"] .touch-controls__body { min-height: 136px; }
+  body[data-game-profile="tetris"] .touch-dpad { grid-template: 52px / repeat(3, 52px); gap: 6px; }
+  body[data-game-profile="tetris"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
+  body[data-game-profile="tetris"] .touch-dpad [data-control="down"] { grid-area: 1 / 2; }
+  body[data-game-profile="tetris"] .touch-dpad [data-control="right"] { grid-area: 1 / 3; }
+}
+
+@supports (-webkit-touch-callout: none) {
+  @media (pointer: coarse), (max-width: 800px) {
+    .app-shell { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px); }
+    .touch-controls { margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 58px); }
+  }
 }
 
 @media (max-width: 600px) {
-  .app-shell { width: 100%; padding: 16px 10px; }
+  .app-shell { width: 100%; padding: 8px 10px; }
   .game-card { border-radius: 10px; }
-  .brand { margin-bottom: 12px; }
-  .brand-mark { width: 36px; height: 36px; }
-  .eyebrow { font-size: 8px; }
-  h1 { font-size: 25px; }
+  .brand { margin-bottom: 6px; min-height: 30px; }
+  .brand-mark { width: 30px; height: 30px; }
+  h1 { font-size: 23px; gap: 8px; }
   .touch-controls__head { align-items: flex-start; }
   footer { font-size: 8px; }
 }

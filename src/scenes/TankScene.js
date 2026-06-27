@@ -41,11 +41,11 @@ export class TankScene extends Phaser.Scene {
     this.physics.add.overlap(this.enemyBullets, this.player, (player, bullet) => this.hitPlayer(player, bullet));
     this.physics.add.overlap(this.enemyBullets, this.base, (bullet) => {
       bullet.destroy();
-      this.endGame(false, 'BASE LOST');
+      this.endGame(false, '基地失守 / BASE LOST');
     });
     this.physics.add.overlap(this.bullets, this.base, (bullet) => {
       bullet.destroy();
-      this.endGame(false, 'FRIENDLY FIRE');
+      this.endGame(false, '误伤基地 / FRIENDLY FIRE');
     });
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -53,10 +53,12 @@ export class TankScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('menu'));
     this.input.keyboard.on('keydown-ENTER', () => { if (this.model.finished) this.scene.restart(); });
     mobileControls.bindScene(this, 'tank', {
+      restart: () => this.scene.restart(),
       home: () => this.scene.start('menu'),
     });
-    this.add.text(30, 18, 'TANK STRIKE', { fontFamily: 'Arial Black', fontSize: '26px', color: '#63e6be' });
-    this.hud = this.add.text(830, 24, 'SCORE 0000   LIFE 3', { fontFamily: 'Consolas', fontSize: '15px', color: '#d3f9d8' }).setOrigin(1, 0);
+    this.add.text(30, 13, '坦克大战', { fontFamily: 'Arial Black', fontSize: '26px', color: '#63e6be' });
+    this.add.text(32, 44, 'TANK STRIKE', { fontFamily: 'Arial', fontSize: '9px', color: '#698c84', letterSpacing: 2 });
+    this.hud = this.add.text(830, 24, '分数/SCORE 0000   生命/LIFE 3', { fontFamily: 'Consolas', fontSize: '14px', color: '#d3f9d8' }).setOrigin(1, 0);
     this.add.text(30, 655, 'WASD / 方向键移动  ·  SPACE 射击  ·  ESC 返回游戏厅', { fontFamily: 'Arial', fontSize: '11px', color: '#66728b' });
     this.message = this.add.text(430, 340, '', { fontFamily: 'Arial Black', fontSize: '29px', color: '#ffffff', align: 'center', backgroundColor: '#080b14e8', padding: { x: 35, y: 24 } }).setOrigin(0.5).setDepth(20).setVisible(false);
   }
@@ -159,10 +161,10 @@ export class TankScene extends Phaser.Scene {
   }
 
   updateHud() {
-    this.hud.setText(`SCORE ${String(this.model.score).padStart(4, '0')}   LIFE ${this.model.lives}`);
+    this.hud.setText(`分数/SCORE ${String(this.model.score).padStart(4, '0')}   生命/LIFE ${this.model.lives}`);
   }
 
-  endGame(won, reason = won ? 'MISSION CLEAR!' : 'BASE LOST') {
+  endGame(won, reason = won ? '任务完成 / CLEAR' : '基地失守 / BASE LOST') {
     this.model.finish(won);
     soundFX.play(won ? 'win' : 'lose');
     if (!won) soundFX.play('explosion');

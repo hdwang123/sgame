@@ -2,17 +2,16 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="使用 Phaser 制作的纯网页俄罗斯方块" />
-    <title>NEON ARCADE · Phaser 网页游戏厅</title>
+    <title>小游戏厅 · MINI ARCADE</title>
   </head>
   <body>
     <main class="app-shell">
       <header class="brand">
         <div class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         <div>
-          <p class="eyebrow">PHASER ARCADE / FOUR GAMES</p>
-          <h1>NEON <span>ARCADE</span></h1>
+          <h1>小游戏厅 <span>MINI ARCADE</span></h1>
         </div>
       </header>
 
@@ -22,8 +21,14 @@
 
       <section id="touch-controls" class="touch-controls" aria-label="手机触摸控制面板">
         <div class="touch-controls__head">
-          <span class="touch-indicator"><b></b> TOUCH MODE</span>
+          <span class="touch-indicator"><b></b> 触控模式 / TOUCH</span>
           <span id="touch-hint">轻触游戏卡片开始</span>
+        </div>
+        <div class="touch-speed-selector" aria-label="贪吃蛇速度选择">
+          <span>速度</span>
+          <button type="button" data-control="speed-slow">慢速</button>
+          <button type="button" data-control="speed-normal">标准</button>
+          <button type="button" data-control="speed-fast">快速</button>
         </div>
         <div class="touch-controls__body">
           <div class="touch-dpad" aria-label="方向控制">
@@ -36,14 +41,15 @@
             <button type="button" data-control="primary"><strong>A</strong><span>操作</span></button>
             <button type="button" data-control="secondary"><strong>B</strong><span>操作</span></button>
             <button type="button" class="touch-small" data-control="pause"><strong>Ⅱ</strong><span>暂停</span></button>
+            <button type="button" class="touch-small" data-control="restart"><strong>↺</strong><span>重开</span></button>
             <button type="button" class="touch-small" data-control="home"><strong>⌂</strong><span>返回</span></button>
           </div>
         </div>
       </section>
 
       <footer>
-        <span>4 GAMES · 纯 JavaScript · Phaser 3</span>
-        <span class="status"><b></b> SYSTEM READY</span>
+        <span>四款游戏 · 纯 JavaScript · Phaser 3</span>
+        <span class="status"><b></b> 系统就绪 / READY</span>
       </footer>
     </main>
     <script type="module" src="/src/main.js"></script>

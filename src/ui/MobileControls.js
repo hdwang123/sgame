@@ -4,21 +4,22 @@ const PROFILES = {
     hint: '轻触任意游戏卡片即可开始',
   },
   tetris: {
-    controls: ['left', 'right', 'down', 'primary', 'secondary', 'pause', 'home'],
+    controls: ['left', 'right', 'down', 'primary', 'secondary', 'pause', 'restart', 'home'],
     hint: '按住方向键移动 · A 旋转 · B 直落',
     labels: { primary: ['↻', '旋转'], secondary: ['⇣', '直落'] },
   },
   snake: {
-    controls: ['up', 'left', 'down', 'right', 'pause', 'home'],
+    controls: ['up', 'left', 'down', 'right', 'pause', 'restart', 'home', 'speed-slow', 'speed-normal', 'speed-fast'],
     hint: '轻触方向键控制蛇的前进方向',
+    selected: 'speed-normal',
   },
-  platformer: {
-    controls: ['left', 'right', 'primary', 'home'],
+  maryJump: {
+    controls: ['left', 'right', 'primary', 'restart', 'home'],
     hint: '按住左右移动 · 轻触 A 跳跃',
     labels: { primary: ['▲', '跳跃'] },
   },
   tank: {
-    controls: ['up', 'left', 'down', 'right', 'primary', 'home'],
+    controls: ['up', 'left', 'down', 'right', 'primary', 'restart', 'home'],
     hint: '按住方向键驾驶 · 按住 A 连续开火',
     labels: { primary: ['●', '开火'] },
   },
@@ -63,9 +64,11 @@ class MobileControls {
     const profile = PROFILES[name] ?? PROFILES.menu;
     this.releaseAll();
     this.root.dataset.profile = name;
+    document.body.dataset.gameProfile = name;
     this.hint.textContent = profile.hint;
     const visible = new Set(profile.controls);
     this.buttons.forEach((button, control) => {
+      button.classList.remove('is-selected');
       button.hidden = !visible.has(control);
       const label = profile.labels?.[control];
       if (label) {
@@ -73,6 +76,7 @@ class MobileControls {
         button.querySelector('span').textContent = label[1];
       }
     });
+    if (profile.selected) this.select(profile.selected);
   }
 
   on(control, handler) {
@@ -96,6 +100,12 @@ class MobileControls {
 
   isDown(control) {
     return this.pressed.has(control);
+  }
+
+  select(control) {
+    this.buttons.forEach((button, key) => {
+      if (key.startsWith('speed-')) button.classList.toggle('is-selected', key === control);
+    });
   }
 
   releaseAll() {

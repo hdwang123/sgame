@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { TetrisGame } from '../src/game/tetris/TetrisGame.js';
 import { SnakeGame } from '../src/game/snake/SnakeGame.js';
-import { PlatformerGame } from '../src/game/platformer/PlatformerGame.js';
+import { MaryJumpGame } from '../src/game/mary-jump/MaryJumpGame.js';
 import { TankGame } from '../src/game/tank/TankGame.js';
 import { ENEMY_SPAWNS, TANK_ARENA } from '../src/game/tank/config.js';
 
@@ -13,6 +13,13 @@ assert.ok(tetris.hardDrop().distance >= 0);
 assert.ok(tetris.board.some((row) => row.some(Boolean)));
 
 const snake = new SnakeGame({ columns: 8, rows: 6, random: () => 0 });
+assert.equal(snake.setSpeed('slow'), true);
+assert.equal(snake.speed, 235);
+assert.equal(snake.setSpeed('normal'), true);
+assert.equal(snake.speed, 175);
+assert.equal(snake.setSpeed('fast'), true);
+assert.equal(snake.speed, 125);
+assert.equal(snake.setSpeed('invalid'), false);
 assert.equal(snake.turn(-1, 0), false);
 assert.equal(snake.turn(0, -1), true);
 assert.equal(snake.step().gameOver, false);
@@ -21,11 +28,11 @@ snake.direction = { x: -1, y: 0 };
 snake.nextDirection = { x: -1, y: 0 };
 assert.equal(snake.step().gameOver, true);
 
-const platformer = new PlatformerGame();
-assert.equal(platformer.collectCoin(), 100);
-assert.equal(platformer.defeatEnemy(), 300);
-assert.equal(platformer.isStomp({ y: 10, velocityY: 200 }, { y: 30 }), true);
-assert.equal(platformer.finish('won'), true);
+const maryJump = new MaryJumpGame();
+assert.equal(maryJump.collectCoin(), 100);
+assert.equal(maryJump.defeatEnemy(), 300);
+assert.equal(maryJump.isStomp({ y: 10, velocityY: 200 }, { y: 30 }), true);
+assert.equal(maryJump.finish('won'), true);
 
 const tank = new TankGame(() => 0);
 assert.equal(tank.canPlayerShoot(1000), true);

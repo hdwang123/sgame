@@ -4,7 +4,7 @@ import { mobileControls } from '../ui/MobileControls.js';
 const GAMES = [
   { key: 'tetris', number: '01', title: '俄罗斯方块', en: 'NEON BLOCKS', color: 0x748ffc, icon: '▦', desc: '堆叠、旋转、消除' },
   { key: 'snake', number: '02', title: '贪吃蛇', en: 'CYBER SNAKE', color: 0x51cf66, icon: '●', desc: '吞噬能量，不断生长' },
-  { key: 'platformer', number: '03', title: '超级玛丽', en: 'SUPER JUMP', color: 0xff922b, icon: '▲', desc: '奔跑、跳跃、抵达终点' },
+  { key: 'maryJump', number: '03', title: '玛丽跳跃', en: 'MARY JUMP', color: 0xff922b, icon: '▲', desc: '奔跑、跳跃、抵达终点' },
   { key: 'tank', number: '04', title: '坦克大战', en: 'TANK STRIKE', color: 0x38d9a9, icon: '◆', desc: '守住基地，消灭敌军' },
 ];
 
@@ -14,12 +14,13 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    this.scale.resize(860, 680);
     mobileControls.setProfile('menu');
     this.selected = 0;
     this.cards = [];
     this.drawBackdrop();
-    this.add.text(64, 48, 'SELECT GAME', { fontFamily: 'Arial Black, Arial', fontSize: '34px', color: '#f5f7ff' });
-    this.add.text(66, 92, '选择一个游戏，按 ENTER 开始', { fontFamily: 'Arial', fontSize: '14px', color: '#7681a6', letterSpacing: 2 });
+    this.add.text(64, 44, '选择游戏', { fontFamily: 'Arial Black, Arial', fontSize: '34px', color: '#f5f7ff' });
+    this.add.text(66, 87, 'SELECT A GAME  ·  按 ENTER 开始', { fontFamily: 'Arial', fontSize: '13px', color: '#7681a6', letterSpacing: 1 });
     GAMES.forEach((game, index) => this.createCard(game, index));
     this.add.text(430, 638, '方向键选择  ·  ENTER 开始  ·  数字键快速进入', { fontFamily: 'Arial', fontSize: '12px', color: '#697392' }).setOrigin(0.5);
     this.input.keyboard.on('keydown-LEFT', () => this.select(this.selected % 2 === 0 ? this.selected + 1 : this.selected - 1));
@@ -51,10 +52,10 @@ export class MenuScene extends Phaser.Scene {
     const color = `#${game.color.toString(16).padStart(6, '0')}`;
     const icon = this.add.text(57, 61, game.icon, { fontFamily: 'Arial Black', fontSize: '28px', color }).setOrigin(0.5);
     const num = this.add.text(318, 22, game.number, { fontFamily: 'Consolas', fontSize: '12px', color: '#5f6887' }).setOrigin(1, 0);
-    const en = this.add.text(108, 35, game.en, { fontFamily: 'Arial Black', fontSize: '18px', color: '#eef1ff' });
-    const title = this.add.text(108, 64, game.title, { fontFamily: 'Arial', fontSize: '13px', color: '#8d97b9' });
+    const title = this.add.text(108, 32, game.title, { fontFamily: 'Arial Black', fontSize: '20px', color: '#eef1ff' });
+    const en = this.add.text(108, 65, game.en, { fontFamily: 'Arial', fontSize: '11px', color: '#8d97b9', letterSpacing: 1 });
     const desc = this.add.text(27, 126, game.desc, { fontFamily: 'Arial', fontSize: '13px', color: '#7781a0' });
-    const action = this.add.text(27, 160, 'PLAY  →', { fontFamily: 'Consolas', fontSize: '12px', color });
+    const action = this.add.text(27, 160, '开始  /  PLAY  →', { fontFamily: 'Arial', fontSize: '12px', color });
     card.add([bg, accent, iconBg, icon, num, en, title, desc, action]);
     bg.on('pointerover', () => this.select(index));
     bg.on('pointerdown', () => this.scene.start(game.key));

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { SnakeGame } from '../game/snake/SnakeGame.js';
-import { SNAKE_RULES } from '../game/snake/config.js';
+import { SNAKE_RULES, SNAKE_SPEEDS } from '../game/snake/config.js';
 import { soundFX } from '../audio/SoundFX.js';
 import { mobileControls } from '../ui/MobileControls.js';
 
@@ -17,12 +17,14 @@ export class SnakeScene extends Phaser.Scene {
 
   create() {
     this.model = new SnakeGame({ columns: COLS, rows: ROWS });
+    this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
     this.stepTimer = 0;
     this.paused = false;
     this.drawFrame();
     this.snakeGraphics = this.add.graphics();
     this.bindKeys();
     this.bindTouchControls();
+    this.setSpeed('normal');
     this.renderGame();
   }
 
@@ -33,10 +35,25 @@ export class SnakeScene extends Phaser.Scene {
     grid.lineStyle(1, 0x1d2940, 0.5);
     for (let x = 0; x <= COLS; x += 1) grid.lineBetween(ORIGIN_X + x * CELL, ORIGIN_Y, ORIGIN_X + x * CELL, ORIGIN_Y + ROWS * CELL);
     for (let y = 0; y <= ROWS; y += 1) grid.lineBetween(ORIGIN_X, ORIGIN_Y + y * CELL, ORIGIN_X + COLS * CELL, ORIGIN_Y + y * CELL);
-    this.add.text(80, 42, 'CYBER SNAKE', { fontFamily: 'Arial Black', fontSize: '28px', color: '#69db7c' });
-    this.scoreText = this.add.text(780, 50, 'SCORE 000', { fontFamily: 'Consolas', fontSize: '16px', color: '#d3f9d8' }).setOrigin(1, 0);
+    this.add.text(80, 37, '贪吃蛇', { fontFamily: 'Arial Black', fontSize: '28px', color: '#69db7c' });
+    this.add.text(82, 72, 'CYBER SNAKE', { fontFamily: 'Arial', fontSize: '10px', color: '#688176', letterSpacing: 2 });
+    this.scoreText = this.add.text(780, 50, '分数 / SCORE  000', { fontFamily: 'Consolas', fontSize: '15px', color: '#d3f9d8' }).setOrigin(1, 0);
     this.add.text(80, 640, '方向键 / WASD 移动   ·   P 暂停   ·   ESC 返回游戏厅', { fontFamily: 'Arial', fontSize: '12px', color: '#64708f' });
+    this.speedButtons = new Map();
+    if (!this.isMobileLayout) {
+      this.add.text(320, 38, '速度 / SPEED', { fontFamily: 'Arial', fontSize: '11px', color: '#7c86aa' });
+      Object.entries(SNAKE_SPEEDS).forEach(([key, option], index) => this.createSpeedButton(key, option.label, 365 + index * 92));
+    }
     this.message = this.add.text(430, 360, '', { fontFamily: 'Arial Black', fontSize: '28px', color: '#ffffff', align: 'center', backgroundColor: '#080b14dd', padding: { x: 32, y: 22 } }).setOrigin(0.5).setDepth(5).setVisible(false);
+  }
+
+  createSpeedButton(key, label, x) {
+    const background = this.add.rectangle(x, 72, 82, 30, 0x171d35, 0.96)
+      .setStrokeStyle(1, 0x3a4568, 0.9)
+      .setInteractive({ useHandCursor: true });
+    const text = this.add.text(x, 72, label, { fontFamily: 'Arial', fontSize: '12px', color: '#aab4d2' }).setOrigin(0.5);
+    background.on('pointerdown', () => this.setSpeed(key));
+    this.speedButtons.set(key, { background, text });
   }
 
   bindKeys() {
@@ -52,7 +69,7 @@ export class SnakeScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-P', () => {
       if (!this.model.gameOver) {
         this.paused = !this.paused;
-        this.message.setText('PAUSED\n按 P 继续').setVisible(this.paused);
+        this.message.setText('游戏暂停\nPAUSED  ·  按 P 继续').setVisible(this.paused);
       }
     });
     this.input.keyboard.on('keydown-ENTER', () => { if (this.model.gameOver) this.scene.restart(); });
@@ -63,7 +80,7 @@ export class SnakeScene extends Phaser.Scene {
     const pause = () => {
       if (!this.model.gameOver) {
         this.paused = !this.paused;
-        this.message.setText('PAUSED\n轻触暂停键继续').setVisible(this.paused);
+        this.message.setText('游戏暂停\nPAUSED  ·  轻触暂停键继续').setVisible(this.paused);
       }
     };
     mobileControls.bindScene(this, 'snake', {
@@ -72,7 +89,23 @@ export class SnakeScene extends Phaser.Scene {
       up: () => this.model.turn(0, -1),
       down: () => this.model.turn(0, 1),
       pause,
+      restart: () => this.scene.restart(),
       home: () => this.scene.start('menu'),
+      'speed-normal': () => this.setSpeed('normal'),
+      'speed-slow': () => this.setSpeed('slow'),
+      'speed-fast': () => this.setSpeed('fast'),
+    });
+  }
+
+  setSpeed(speedKey) {
+    if (!this.model.setSpeed(speedKey)) return;
+    this.stepTimer = 0;
+    mobileControls.select(`speed-${speedKey}`);
+    this.speedButtons?.forEach(({ background, text }, key) => {
+      const selected = key === speedKey;
+      background.setFillStyle(selected ? 0x235f58 : 0x171d35, 0.96);
+      background.setStrokeStyle(selected ? 2 : 1, selected ? 0x63e6be : 0x3a4568, selected ? 1 : 0.9);
+      text.setColor(selected ? '#e6fff8' : '#aab4d2');
     });
   }
 
@@ -89,12 +122,12 @@ export class SnakeScene extends Phaser.Scene {
     const result = this.model.step();
     if (result.gameOver) {
       soundFX.play('lose');
-      this.message.setText(`GAME OVER\n得分 ${this.model.score}\n按 ENTER 重来`).setVisible(true);
+      this.message.setText(`游戏结束\nGAME OVER  ·  得分 ${this.model.score}\n按 ENTER 重来`).setVisible(true);
       return;
     }
     if (result.ate) {
       soundFX.play('eat');
-      this.scoreText.setText(`SCORE ${String(this.model.score).padStart(3, '0')}`);
+      this.scoreText.setText(`分数 / SCORE  ${String(this.model.score).padStart(3, '0')}`);
       this.cameras.main.flash(80, 70, 255, 130, false);
     }
     this.renderGame();
