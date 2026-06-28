@@ -10,10 +10,11 @@ export class TankScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('tank-bg', '/assets/tank/battlefield.png');
-    this.load.image('playerTank', '/assets/tank/player-tank-cartoon.png');
-    this.load.image('enemyTank', '/assets/tank/enemy-tank-cartoon.png');
-    this.load.image('baseCastle', '/assets/tank/base-castle-cartoon.png');
+    const assets = `${import.meta.env.BASE_URL}assets/tank/`;
+    this.load.image('tank-bg', `${assets}battlefield.png`);
+    this.load.image('playerTank', `${assets}player-tank-cartoon.png`);
+    this.load.image('enemyTank', `${assets}enemy-tank-cartoon.png`);
+    this.load.image('baseCastle', `${assets}base-castle-cartoon.png`);
   }
 
   create(data = {}) {
@@ -162,7 +163,13 @@ export class TankScene extends Phaser.Scene {
       if (enemy?.active) this.updateEnemy(enemy, time);
     });
     [...this.bullets.getChildren(), ...this.enemyBullets.getChildren()].forEach((bullet) => {
-      if (bullet.x < 10 || bullet.x > 850 || bullet.y < 50 || bullet.y > 645) bullet.destroy();
+      const halfWidth = bullet.displayWidth / 2;
+      const halfHeight = bullet.displayHeight / 2;
+      const outsideArena = bullet.x - halfWidth <= TANK_ARENA.x
+        || bullet.x + halfWidth >= TANK_ARENA.x + TANK_ARENA.width
+        || bullet.y - halfHeight <= TANK_ARENA.y
+        || bullet.y + halfHeight >= TANK_ARENA.y + TANK_ARENA.height;
+      if (outsideArena) bullet.destroy();
     });
   }
 

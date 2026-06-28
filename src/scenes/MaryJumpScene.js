@@ -10,9 +10,10 @@ export class MaryJumpScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('mary-jump-bg', '/assets/mary-jump/sunset-ruins.png');
-    this.load.image('hero', '/assets/mary-jump/hero.png');
-    this.load.image('enemy', '/assets/mary-jump/slime.png');
+    const assets = `${import.meta.env.BASE_URL}assets/mary-jump/`;
+    this.load.image('mary-jump-bg', `${assets}sunset-ruins.png`);
+    this.load.image('hero', `${assets}hero.png`);
+    this.load.image('enemy', `${assets}slime.png`);
   }
 
   create(data = {}) {

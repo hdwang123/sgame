@@ -1,14 +1,45 @@
 class SoundFX {
   constructor() {
     this.context = null;
+    this.unlockPromise = null;
+
+    // Mobile browsers only allow Web Audio to start during a user gesture.
+    // Capture the gesture before game controls consume it, and unlock again
+    // after returning from the background if the browser suspended audio.
+    const unlock = () => this.unlock();
+    globalThis.addEventListener?.('pointerdown', unlock, { capture: true, passive: true });
+    globalThis.addEventListener?.('touchstart', unlock, { capture: true, passive: true });
+    globalThis.addEventListener?.('keydown', unlock, { capture: true });
   }
 
   getContext() {
     const AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext;
     if (!AudioContext) return null;
     if (!this.context) this.context = new AudioContext();
-    if (this.context.state === 'suspended') this.context.resume();
     return this.context;
+  }
+
+  unlock() {
+    const context = this.getContext();
+    if (!context || context.state === 'running') return Promise.resolve(context);
+    if (!this.unlockPromise) {
+      // Queue a silent buffer synchronously inside the gesture. Older iOS and
+      // embedded WebViews may ignore resume() when no audio node is started.
+      try {
+        const buffer = context.createBuffer(1, 1, context.sampleRate);
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(context.destination);
+        source.start(0);
+      } catch {
+        // resume() below is still sufficient on browsers without this quirk.
+      }
+      this.unlockPromise = Promise.resolve(context.resume())
+        .then(() => context)
+        .catch(() => null)
+        .finally(() => { this.unlockPromise = null; });
+    }
+    return this.unlockPromise;
   }
 
   tone(frequency, duration = 0.08, { type = 'square', volume = 0.035, endFrequency = frequency } = {}) {
@@ -44,6 +75,11 @@ class SoundFX {
   }
 
   play(name) {
+    const context = this.getContext();
+    if (!context) return;
+    // Create and schedule sound nodes immediately. If the context is still
+    // suspended, Web Audio keeps them queued until unlock() completes.
+    if (context.state !== 'running') this.unlock();
     const sounds = {
       move: () => this.tone(150, 0.035, { volume: 0.015, endFrequency: 170 }),
       rotate: () => this.tone(260, 0.07, { volume: 0.025, endFrequency: 420 }),

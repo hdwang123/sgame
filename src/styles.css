@@ -147,7 +147,7 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   .touch-dpad button { width: 58px; height: 58px; border-radius: 16px; font-size: 23px; }
   .touch-dpad [data-control="up"] { grid-area: 1 / 2; }
   .touch-dpad [data-control="left"] { grid-area: 2 / 1; }
-  .touch-dpad [data-control="down"] { grid-area: 2 / 2; }
+  .touch-dpad [data-control="down"] { grid-area: 3 / 2; }
   .touch-dpad [data-control="right"] { grid-area: 2 / 3; }
   .touch-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; max-width: 190px; }
   .touch-actions button { width: 82px; height: 82px; border-radius: 50%; display: grid; place-content: center; gap: 4px; }
@@ -262,19 +262,4 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     max-width: var(--action-size);
     gap: 6px;
   }
-}
-
-@media (pointer: coarse), (max-width: 800px) {
-  body[data-game-profile="snake"] .touch-dpad,
-  body[data-game-profile="tank"] .touch-dpad {
-    grid-template: repeat(2, var(--dpad-size, 58px)) / repeat(3, var(--dpad-size, 58px));
-  }
-  body[data-game-profile="snake"] .touch-dpad [data-control="left"],
-  body[data-game-profile="tank"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
-  body[data-game-profile="snake"] .touch-dpad [data-control="up"],
-  body[data-game-profile="tank"] .touch-dpad [data-control="up"] { grid-area: 1 / 2; }
-  body[data-game-profile="snake"] .touch-dpad [data-control="right"],
-  body[data-game-profile="tank"] .touch-dpad [data-control="right"] { grid-area: 1 / 3; }
-  body[data-game-profile="snake"] .touch-dpad [data-control="down"],
-  body[data-game-profile="tank"] .touch-dpad [data-control="down"] { grid-area: 2 / 2; }
 }
