@@ -37,6 +37,8 @@ class MobileControls {
   }
 
   bindButtons() {
+    this.root.addEventListener('selectstart', (event) => event.preventDefault());
+    this.root.addEventListener('dragstart', (event) => event.preventDefault());
     this.root.querySelectorAll('[data-control]').forEach((button) => {
       const control = button.dataset.control;
       this.buttons.set(control, button);

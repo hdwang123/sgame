@@ -60,6 +60,17 @@ h1 span { color: #748ffc; font-size: .38em; font-weight: 600; letter-spacing: .1
 #game-container { width: 100%; aspect-ratio: 860 / 680; }
 #game-container canvas { display: block; width: 100% !important; height: 100% !important; }
 
+.game-card,
+#game-container,
+#game-container canvas,
+.touch-controls,
+.touch-controls * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
 footer { display: flex; justify-content: space-between; padding: 14px 4px 0; color: #59617d; font-size: 11px; letter-spacing: .12em; }
 .status { color: #6d789a; }
 .status b { display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: #51cf66; box-shadow: 0 0 10px #51cf66; }
