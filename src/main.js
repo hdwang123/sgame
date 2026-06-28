@@ -7,13 +7,25 @@ import { TankScene } from './scenes/TankScene.js';
 import './ui/MobileControls.js';
 import './styles.css';
 
+const userAgent = globalThis.navigator?.userAgent ?? '';
+const isMobileBrowser = globalThis.matchMedia?.('(pointer: coarse)').matches
+  || /Android|iPhone|iPad|iPod|Mobile|MicroMessenger/i.test(userAgent);
+
 const config = {
-  type: Phaser.AUTO,
+  // Mobile Safari and some WeChat WebViews can create a WebGL context but
+  // render a black canvas after uploading the larger game textures. Canvas is
+  // fast enough for these games and is substantially more reliable there.
+  type: isMobileBrowser ? Phaser.CANVAS : Phaser.AUTO,
   parent: 'game-container',
   width: 860,
   height: 680,
   backgroundColor: '#090b15',
   scene: [MenuScene, TetrisScene, SnakeScene, MaryJumpScene, TankScene],
+  loader: {
+    // Avoid the default XHR Blob -> Image copy. Direct image loading lowers
+    // peak memory use and is more reliable in Safari and embedded WebViews.
+    imageLoadType: 'HTMLImageElement',
+  },
   physics: {
     default: 'arcade',
     arcade: { gravity: { y: 0 }, debug: false },
@@ -28,4 +40,7 @@ const config = {
   },
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+document.documentElement.dataset.renderer = isMobileBrowser ? 'canvas' : 'auto';
+
+export { game };

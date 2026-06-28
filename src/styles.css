@@ -109,6 +109,12 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
 .touch-speed-selector { display: none; }
 
 @media (pointer: coarse), (max-width: 800px) {
+  .game-card,
+  .touch-controls {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
   .touch-controls {
     display: block;
     position: relative;

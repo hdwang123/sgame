@@ -3,6 +3,7 @@ import { MaryJumpGame } from '../game/mary-jump/MaryJumpGame.js';
 import { MARY_JUMP_LEVELS, MARY_JUMP_RULES } from '../game/mary-jump/config.js';
 import { soundFX } from '../audio/SoundFX.js';
 import { mobileControls } from '../ui/MobileControls.js';
+import { showSceneLoader } from '../ui/SceneLoader.js';
 
 export class MaryJumpScene extends Phaser.Scene {
   constructor() {
@@ -10,8 +11,9 @@ export class MaryJumpScene extends Phaser.Scene {
   }
 
   preload() {
+    showSceneLoader(this, 0xff922b);
     const assets = `${import.meta.env.BASE_URL}assets/mary-jump/`;
-    this.load.image('mary-jump-bg', `${assets}sunset-ruins.png`);
+    this.load.image('mary-jump-bg', `${assets}sunset-ruins.jpg`);
     this.load.image('hero', `${assets}hero.png`);
     this.load.image('enemy', `${assets}slime.png`);
   }

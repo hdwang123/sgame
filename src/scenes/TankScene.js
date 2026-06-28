@@ -3,6 +3,7 @@ import { TankGame } from '../game/tank/TankGame.js';
 import { TANK_ARENA, TANK_LEVELS, TANK_RULES } from '../game/tank/config.js';
 import { soundFX } from '../audio/SoundFX.js';
 import { mobileControls } from '../ui/MobileControls.js';
+import { showSceneLoader } from '../ui/SceneLoader.js';
 
 export class TankScene extends Phaser.Scene {
   constructor() {
@@ -10,8 +11,9 @@ export class TankScene extends Phaser.Scene {
   }
 
   preload() {
+    showSceneLoader(this, 0x38d9a9);
     const assets = `${import.meta.env.BASE_URL}assets/tank/`;
-    this.load.image('tank-bg', `${assets}battlefield.png`);
+    this.load.image('tank-bg', `${assets}battlefield.jpg`);
     this.load.image('playerTank', `${assets}player-tank-cartoon.png`);
     this.load.image('enemyTank', `${assets}enemy-tank-cartoon.png`);
     this.load.image('baseCastle', `${assets}base-castle-cartoon.png`);
