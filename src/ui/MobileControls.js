@@ -39,6 +39,12 @@ class MobileControls {
   bindButtons() {
     this.root.addEventListener('selectstart', (event) => event.preventDefault());
     this.root.addEventListener('dragstart', (event) => event.preventDefault());
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach((eventName) => {
+      document.addEventListener(eventName, (event) => event.preventDefault(), { passive: false });
+    });
+    document.addEventListener('touchmove', (event) => {
+      if (event.touches.length > 1) event.preventDefault();
+    }, { passive: false });
     this.root.querySelectorAll('[data-control]').forEach((button) => {
       const control = button.dataset.control;
       this.buttons.set(control, button);

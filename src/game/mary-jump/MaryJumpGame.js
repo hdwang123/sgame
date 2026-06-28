@@ -24,7 +24,9 @@ export class MaryJumpGame {
   }
 
   isStomp(playerState, enemyState) {
-    return playerState.velocityY > 120 && playerState.y < enemyState.y - 8;
+    const descendingOrNearApex = playerState.velocityY >= -35;
+    const clearlyAbove = playerState.y <= enemyState.y - 12;
+    return descendingOrNearApex && clearlyAbove;
   }
 
   finish(outcome) {

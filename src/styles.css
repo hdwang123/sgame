@@ -71,6 +71,13 @@ h1 span { color: #748ffc; font-size: .38em; font-weight: 600; letter-spacing: .1
   -webkit-user-drag: none;
 }
 
+.game-card,
+#game-container,
+#game-container canvas,
+.touch-controls {
+  touch-action: none;
+}
+
 footer { display: flex; justify-content: space-between; padding: 14px 4px 0; color: #59617d; font-size: 11px; letter-spacing: .12em; }
 .status { color: #6d789a; }
 .status b { display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: #51cf66; box-shadow: 0 0 10px #51cf66; }
@@ -126,7 +133,7 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   }
   .touch-indicator { color: #65d9bb; white-space: nowrap; }
   .touch-indicator b { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #63e6be; box-shadow: 0 0 8px #63e6be; }
-  .touch-controls__body { display: flex; align-items: center; justify-content: space-between; min-height: 168px; margin-top: 5px; }
+  .touch-controls__body { display: flex; align-items: center; justify-content: space-between; min-height: 190px; margin-top: 5px; }
   body[data-game-profile="snake"] .touch-speed-selector {
     display: flex;
     align-items: center;
@@ -134,20 +141,20 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     margin-top: 8px;
   }
   .touch-speed-selector span { margin-right: auto; color: #8490af; font-size: 11px; }
-  .touch-speed-selector button { min-width: 66px; height: 38px; padding: 0 10px; border-radius: 19px; font: 12px 'Chakra Petch', sans-serif; }
+  .touch-speed-selector button { min-width: 76px; height: 46px; padding: 0 12px; border-radius: 23px; font: 13px 'Chakra Petch', sans-serif; }
   .touch-controls[data-profile="menu"] .touch-controls__body { display: none; }
-  .touch-dpad { display: grid; grid-template: repeat(3, 52px) / repeat(3, 52px); gap: 5px; }
-  .touch-dpad button { width: 52px; height: 52px; border-radius: 14px; font-size: 19px; }
+  .touch-dpad { display: grid; grid-template: repeat(3, 58px) / repeat(3, 58px); gap: 6px; }
+  .touch-dpad button { width: 58px; height: 58px; border-radius: 16px; font-size: 23px; }
   .touch-dpad [data-control="up"] { grid-area: 1 / 2; }
   .touch-dpad [data-control="left"] { grid-area: 2 / 1; }
   .touch-dpad [data-control="down"] { grid-area: 2 / 2; }
   .touch-dpad [data-control="right"] { grid-area: 2 / 3; }
-  .touch-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; max-width: 176px; }
-  .touch-actions button { width: 74px; height: 74px; border-radius: 50%; display: grid; place-content: center; gap: 3px; }
-  .touch-actions button strong { font-size: 20px; line-height: 1; }
-  .touch-actions button span { color: #8f9bbc; font: 10px/1 'Chakra Petch', sans-serif; }
-  .touch-actions button.touch-small { width: 50px; height: 50px; }
-  .touch-actions button.touch-small strong { font-size: 15px; }
+  .touch-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; max-width: 190px; }
+  .touch-actions button { width: 82px; height: 82px; border-radius: 50%; display: grid; place-content: center; gap: 4px; }
+  .touch-actions button strong { font-size: 23px; line-height: 1; }
+  .touch-actions button span { color: #8f9bbc; font: 11px/1 'Chakra Petch', sans-serif; }
+  .touch-actions button.touch-small { width: 56px; height: 56px; }
+  .touch-actions button.touch-small strong { font-size: 17px; }
   .touch-actions button[hidden], .touch-dpad button[hidden], .touch-speed-selector button[hidden] { display: none; }
   body[data-game-profile="tetris"] #game-container { aspect-ratio: 620 / 680; }
   body[data-game-profile="tetris"] .brand,
@@ -162,11 +169,15 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   body[data-game-profile="snake"] .app-shell,
   body[data-game-profile="maryJump"] .app-shell,
   body[data-game-profile="tank"] .app-shell { padding-top: 2px; }
-  body[data-game-profile="tetris"] .touch-controls__body { min-height: 136px; }
-  body[data-game-profile="tetris"] .touch-dpad { grid-template: 52px / repeat(3, 52px); gap: 6px; }
+  body[data-game-profile="tetris"] .touch-controls__body { min-height: 190px; }
+  body[data-game-profile="tetris"] .touch-dpad { grid-template: repeat(2, 68px) / repeat(2, 68px); gap: 8px; }
+  body[data-game-profile="tetris"] .touch-dpad button { width: 68px; height: 68px; }
   body[data-game-profile="tetris"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
-  body[data-game-profile="tetris"] .touch-dpad [data-control="down"] { grid-area: 1 / 2; }
-  body[data-game-profile="tetris"] .touch-dpad [data-control="right"] { grid-area: 1 / 3; }
+  body[data-game-profile="tetris"] .touch-dpad [data-control="right"] { grid-area: 1 / 2; }
+  body[data-game-profile="tetris"] .touch-dpad [data-control="down"] {
+    grid-area: 2 / 1 / 3 / 3;
+    justify-self: center;
+  }
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -184,4 +195,86 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   h1 { font-size: 23px; gap: 8px; }
   .touch-controls__head { align-items: flex-start; }
   footer { font-size: 8px; }
+
+  .touch-controls {
+    --dpad-size: clamp(50px, 14vw, 58px);
+    --action-size: clamp(72px, 19vw, 82px);
+    --small-action-size: clamp(50px, 14vw, 56px);
+    padding: 9px 9px 12px;
+  }
+  .touch-controls__body { gap: 8px; min-height: 166px; }
+  .touch-dpad {
+    grid-template: repeat(3, var(--dpad-size)) / repeat(3, var(--dpad-size));
+    gap: 4px;
+    flex: 0 0 auto;
+  }
+  .touch-dpad button {
+    width: var(--dpad-size);
+    height: var(--dpad-size);
+    border-radius: 14px;
+    font-size: 22px;
+  }
+  .touch-actions {
+    gap: 8px;
+    max-width: calc(var(--small-action-size) * 2 + 8px);
+  }
+  .touch-actions button { width: var(--action-size); height: var(--action-size); }
+  .touch-actions button.touch-small { width: var(--small-action-size); height: var(--small-action-size); }
+
+  body[data-game-profile="tetris"] .touch-controls__body {
+    flex-direction: row;
+    justify-content: space-between;
+    min-height: 270px;
+    gap: 8px;
+  }
+  body[data-game-profile="tetris"] .touch-dpad {
+    --tetris-direction-size: clamp(60px, 17vw, 70px);
+    grid-template: repeat(2, var(--tetris-direction-size)) / repeat(2, var(--tetris-direction-size));
+    gap: 7px;
+  }
+  body[data-game-profile="tetris"] .touch-dpad button {
+    width: var(--tetris-direction-size);
+    height: var(--tetris-direction-size);
+  }
+  body[data-game-profile="tetris"] .touch-actions {
+    width: auto;
+    max-width: calc(var(--action-size) * 2 + 8px);
+    justify-content: flex-end;
+  }
+
+  body[data-game-profile="maryJump"] .touch-controls__body { min-height: 82px; }
+  body[data-game-profile="maryJump"] .touch-dpad {
+    grid-template: 62px / repeat(2, 62px);
+    gap: 8px;
+  }
+  body[data-game-profile="maryJump"] .touch-dpad button { width: 62px; height: 62px; }
+  body[data-game-profile="maryJump"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
+  body[data-game-profile="maryJump"] .touch-dpad [data-control="right"] { grid-area: 1 / 2; }
+}
+
+@media (max-width: 340px) {
+  body[data-game-profile="tetris"] .touch-controls__body { gap: 4px; }
+  body[data-game-profile="tetris"] .touch-dpad {
+    --tetris-direction-size: 58px;
+    gap: 5px;
+  }
+  body[data-game-profile="tetris"] .touch-actions {
+    max-width: var(--action-size);
+    gap: 6px;
+  }
+}
+
+@media (pointer: coarse), (max-width: 800px) {
+  body[data-game-profile="snake"] .touch-dpad,
+  body[data-game-profile="tank"] .touch-dpad {
+    grid-template: repeat(2, var(--dpad-size, 58px)) / repeat(3, var(--dpad-size, 58px));
+  }
+  body[data-game-profile="snake"] .touch-dpad [data-control="left"],
+  body[data-game-profile="tank"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
+  body[data-game-profile="snake"] .touch-dpad [data-control="up"],
+  body[data-game-profile="tank"] .touch-dpad [data-control="up"] { grid-area: 1 / 2; }
+  body[data-game-profile="snake"] .touch-dpad [data-control="right"],
+  body[data-game-profile="tank"] .touch-dpad [data-control="right"] { grid-area: 1 / 3; }
+  body[data-game-profile="snake"] .touch-dpad [data-control="down"],
+  body[data-game-profile="tank"] .touch-dpad [data-control="down"] { grid-area: 2 / 2; }
 }

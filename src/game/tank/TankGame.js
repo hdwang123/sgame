@@ -1,14 +1,14 @@
 import { TANK_DIRECTIONS, TANK_RULES } from './config.js';
 
 export class TankGame {
-  constructor(random = Math.random) {
+  constructor(random = Math.random, initialState = {}) {
     this.random = random;
-    this.reset();
+    this.reset(initialState);
   }
 
-  reset() {
-    this.score = 0;
-    this.lives = TANK_RULES.initialLives;
+  reset(initialState = {}) {
+    this.score = initialState.score ?? 0;
+    this.lives = initialState.lives ?? TANK_RULES.initialLives;
     this.finished = false;
     this.won = false;
     this.lastPlayerShot = 0;
@@ -24,23 +24,30 @@ export class TankGame {
     return { turnAt: 0, shootAt: 900 + index * 250 };
   }
 
-  nextEnemyMove(time) {
+  nextEnemyMove(time, delayRange = [650, 1500]) {
     const direction = TANK_DIRECTIONS[Math.floor(this.random() * TANK_DIRECTIONS.length)];
+    const [minimum, maximum] = delayRange;
     return {
       direction,
-      turnAt: time + 650 + Math.floor(this.random() * 851),
+      turnAt: time + minimum + Math.floor(this.random() * (maximum - minimum + 1)),
     };
   }
 
-  nextEnemyShot(time) {
-    return time + 1100 + Math.floor(this.random() * 1101);
+  nextEnemyShot(time, delayRange = [1100, 2200]) {
+    const [minimum, maximum] = delayRange;
+    return time + minimum + Math.floor(this.random() * (maximum - minimum + 1));
   }
 
   hitEnemy(remainingEnemies) {
     if (this.finished) return false;
     this.score += TANK_RULES.enemyScore;
-    if (remainingEnemies === 0) this.finish(true);
-    return true;
+    return remainingEnemies === 0;
+  }
+
+  addStageBonus(points) {
+    if (this.finished) return this.score;
+    this.score += points;
+    return this.score;
   }
 
   hitPlayer() {
