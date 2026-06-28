@@ -1,20 +1,25 @@
 class SoundFX {
   constructor() {
     this.context = null;
-    this.unlockPromise = null;
+    this.pendingSounds = [];
 
     // Mobile browsers only allow Web Audio to start during a user gesture.
     // Capture the gesture before game controls consume it, and unlock again
     // after returning from the background if the browser suspended audio.
-    const unlock = () => this.unlock();
+    const unlock = () => this.unlock().then((context) => {
+      if (context?.state === 'running') this.flushPendingSounds();
+    });
     globalThis.addEventListener?.('pointerdown', unlock, { capture: true, passive: true });
     globalThis.addEventListener?.('touchstart', unlock, { capture: true, passive: true });
+    globalThis.addEventListener?.('touchend', unlock, { capture: true, passive: true });
+    globalThis.addEventListener?.('click', unlock, { capture: true, passive: true });
     globalThis.addEventListener?.('keydown', unlock, { capture: true });
   }
 
   getContext() {
     const AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext;
     if (!AudioContext) return null;
+    if (this.context?.state === 'closed') this.context = null;
     if (!this.context) this.context = new AudioContext();
     return this.context;
   }
@@ -22,24 +27,29 @@ class SoundFX {
   unlock() {
     const context = this.getContext();
     if (!context || context.state === 'running') return Promise.resolve(context);
-    if (!this.unlockPromise) {
-      // Queue a silent buffer synchronously inside the gesture. Older iOS and
-      // embedded WebViews may ignore resume() when no audio node is started.
-      try {
-        const buffer = context.createBuffer(1, 1, context.sampleRate);
-        const source = context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(context.destination);
-        source.start(0);
-      } catch {
-        // resume() below is still sufficient on browsers without this quirk.
-      }
-      this.unlockPromise = Promise.resolve(context.resume())
-        .then(() => context)
-        .catch(() => null)
-        .finally(() => { this.unlockPromise = null; });
+    // Start a silent node synchronously inside every gesture. Do not reuse a
+    // pending resume Promise: some WebViews leave the first one unresolved but
+    // allow a later user gesture to unlock audio immediately.
+    try {
+      const buffer = context.createBuffer(1, 1, context.sampleRate);
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      source.start(0);
+    } catch {
+      // resume() below is still sufficient on browsers without this quirk.
     }
-    return this.unlockPromise;
+    try {
+      return Promise.resolve(context.resume()).then(() => context).catch(() => null);
+    } catch {
+      return Promise.resolve(null);
+    }
+  }
+
+  flushPendingSounds() {
+    if (this.context?.state !== 'running' || this.pendingSounds.length === 0) return;
+    const sounds = this.pendingSounds.splice(0);
+    sounds.forEach((name) => this.play(name));
   }
 
   tone(frequency, duration = 0.08, { type = 'square', volume = 0.035, endFrequency = frequency } = {}) {
@@ -77,9 +87,16 @@ class SoundFX {
   play(name) {
     const context = this.getContext();
     if (!context) return;
-    // Create and schedule sound nodes immediately. If the context is still
-    // suspended, Web Audio keeps them queued until unlock() completes.
-    if (context.state !== 'running') this.unlock();
+    if (context.state !== 'running') {
+      if (!this.pendingSounds.includes(name)) {
+        this.pendingSounds.push(name);
+        if (this.pendingSounds.length > 4) this.pendingSounds.shift();
+      }
+      this.unlock().then((unlockedContext) => {
+        if (unlockedContext?.state === 'running') this.flushPendingSounds();
+      });
+      return;
+    }
     const sounds = {
       move: () => this.tone(150, 0.035, { volume: 0.015, endFrequency: 170 }),
       rotate: () => this.tone(260, 0.07, { volume: 0.025, endFrequency: 420 }),
