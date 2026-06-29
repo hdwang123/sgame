@@ -7,85 +7,98 @@ export const MARY_JUMP_RULES = {
   levelBonus: 500,
 };
 
-export const MARY_JUMP_LEVELS = [
-  {
-    name: '落日遗迹',
-    subtitle: 'SUNSET RUINS',
-    width: 2600,
+function createMaryJumpLevel({ name, subtitle, width, gravity, enemySpeed, variant }) {
+  const segmentCount = 7;
+  const gapWidth = 76 + variant * 5;
+  const segmentWidth = (width - gapWidth * (segmentCount - 1)) / segmentCount;
+  const platforms = [];
+  const hazards = [];
+  const enemies = [];
+
+  for (let index = 0; index < segmentCount; index += 1) {
+    const startX = index * (segmentWidth + gapWidth);
+    platforms.push([startX + segmentWidth / 2, 650, segmentWidth, 60]);
+    if (index < segmentCount - 1) {
+      hazards.push([startX + segmentWidth + gapWidth / 2, 638, gapWidth, 28]);
+    }
+    if (index > 0 && index < segmentCount - 1) {
+      enemies.push({
+        x: startX + segmentWidth / 2,
+        y: 590,
+        minX: startX + 55,
+        maxX: startX + segmentWidth - 55,
+      });
+    }
+  }
+
+  const coins = [];
+  const platformCount = 9 + (variant % 3);
+  for (let index = 0; index < platformCount; index += 1) {
+    const x = 330 + index * ((width - 660) / Math.max(1, platformCount - 1));
+    const yPattern = [510, 420, 535, 390, 480];
+    const y = yPattern[(index + variant) % yPattern.length];
+    const platformWidth = 150 + ((index + variant) % 3) * 20;
+    platforms.push([x, y, platformWidth, 24]);
+    coins.push([x, y - 45]);
+  }
+
+  return {
+    name,
+    subtitle,
+    width,
     height: 680,
-    gravity: 980,
-    enemySpeed: 70,
-    spawn: { x: 120, y: 560 },
-    goal: { x: 2500, y: 560 },
-    platforms: [
-      [1300, 650, 2600, 60],
-      [420, 520, 220, 24], [740, 430, 170, 24], [1040, 550, 180, 24],
-      [1350, 450, 220, 24], [1690, 535, 150, 24], [1970, 410, 180, 24],
-      [2260, 525, 190, 24],
-    ],
-    coins: [[430, 475], [740, 385], [1050, 505], [1330, 405], [1710, 490], [1980, 365], [2270, 480]],
-    enemies: [
-      { x: 620, y: 590, minX: 510, maxX: 720 },
-      { x: 1160, y: 590, minX: 1060, maxX: 1280 },
-      { x: 1540, y: 590, minX: 1430, maxX: 1650 },
-      { x: 2140, y: 590, minX: 2030, maxX: 2240 },
-    ],
-    hazards: [],
-  },
-  {
-    name: '熔岩裂谷',
-    subtitle: 'LAVA RIFT',
-    width: 3000,
-    height: 680,
-    gravity: 1000,
-    enemySpeed: 82,
-    spawn: { x: 110, y: 550 },
-    goal: { x: 2900, y: 550 },
-    platforms: [
-      [310, 650, 620, 60], [890, 650, 400, 60], [1450, 650, 560, 60],
-      [2050, 650, 420, 60], [2660, 650, 680, 60],
-      [500, 505, 190, 24], [790, 420, 180, 24], [1120, 520, 190, 24],
-      [1460, 430, 180, 24], [1770, 520, 170, 24], [2070, 405, 190, 24],
-      [2390, 505, 190, 24], [2700, 420, 180, 24],
-    ],
-    coins: [[500, 460], [790, 375], [1120, 475], [1460, 385], [1770, 475], [2070, 360], [2390, 460], [2700, 375]],
-    enemies: [
-      { x: 360, y: 590, minX: 180, maxX: 540 },
-      { x: 950, y: 590, minX: 760, maxX: 1060 },
-      { x: 1450, y: 590, minX: 1260, maxX: 1640 },
-      { x: 2070, y: 590, minX: 1920, maxX: 2180 },
-      { x: 2680, y: 590, minX: 2470, maxX: 2830 },
-    ],
-    hazards: [[620, 638, 160, 28], [1160, 638, 140, 28], [1785, 638, 110, 28], [2290, 638, 60, 28]],
-  },
-  {
-    name: '星空要塞',
-    subtitle: 'STAR FORTRESS',
-    width: 3400,
-    height: 680,
-    gravity: 1030,
-    enemySpeed: 96,
+    gravity,
+    enemySpeed,
     spawn: { x: 100, y: 550 },
-    goal: { x: 3300, y: 540 },
-    platforms: [
-      [260, 650, 520, 60], [800, 650, 360, 60], [1330, 650, 460, 60],
-      [1870, 650, 380, 60], [2400, 650, 480, 60], [3080, 650, 640, 60],
-      [420, 500, 170, 24], [700, 405, 160, 24], [980, 510, 170, 24],
-      [1260, 420, 170, 24], [1550, 520, 180, 24], [1830, 410, 160, 24],
-      [2110, 505, 170, 24], [2400, 395, 180, 24], [2700, 510, 170, 24],
-      [3010, 420, 170, 24], [3260, 520, 190, 24],
-    ],
-    coins: [[420, 455], [700, 360], [980, 465], [1260, 375], [1550, 475], [1830, 365], [2110, 460], [2400, 350], [2700, 465], [3010, 375], [3260, 475]],
-    enemies: [
-      { x: 290, y: 590, minX: 130, maxX: 450 },
-      { x: 800, y: 590, minX: 670, maxX: 930 },
-      { x: 1330, y: 590, minX: 1160, maxX: 1500 },
-      { x: 1870, y: 590, minX: 1730, maxX: 2010 },
-      { x: 2400, y: 590, minX: 2220, maxX: 2580 },
-      { x: 3050, y: 590, minX: 2840, maxX: 3220 },
-    ],
-    hazards: [[570, 638, 100, 28], [1040, 638, 120, 28], [1620, 638, 120, 28], [2110, 638, 100, 28], [2700, 638, 120, 28]],
-  },
+    goal: { x: width - 100, y: 550 },
+    platforms,
+    coins,
+    enemies,
+    hazards,
+  };
+}
+
+export const MARY_JUMP_LEVELS = [
+  createMaryJumpLevel({
+    name: '落日遗迹', subtitle: 'SUNSET RUINS', width: 2700,
+    gravity: 960, enemySpeed: 68, variant: 0,
+  }),
+  createMaryJumpLevel({
+    name: '熔岩裂谷', subtitle: 'LAVA RIFT', width: 2800,
+    gravity: 975, enemySpeed: 76, variant: 1,
+  }),
+  createMaryJumpLevel({
+    name: '星空要塞', subtitle: 'STAR FORTRESS', width: 2900,
+    gravity: 985, enemySpeed: 82, variant: 2,
+  }),
+  createMaryJumpLevel({
+    name: '翡翠林地', subtitle: 'EMERALD GROVE', width: 3000,
+    gravity: 990, enemySpeed: 86, variant: 1,
+  }),
+  createMaryJumpLevel({
+    name: '风车峡谷', subtitle: 'WINDMILL CANYON', width: 3150,
+    gravity: 1010, enemySpeed: 92, variant: 2,
+  }),
+  createMaryJumpLevel({
+    name: '水晶矿洞', subtitle: 'CRYSTAL CAVE', width: 3250,
+    gravity: 1020, enemySpeed: 98, variant: 3,
+  }),
+  createMaryJumpLevel({
+    name: '雷鸣高地', subtitle: 'THUNDER HEIGHTS', width: 3350,
+    gravity: 1030, enemySpeed: 104, variant: 4,
+  }),
+  createMaryJumpLevel({
+    name: '冰霜长桥', subtitle: 'FROST BRIDGE', width: 3450,
+    gravity: 1040, enemySpeed: 110, variant: 5,
+  }),
+  createMaryJumpLevel({
+    name: '月影神殿', subtitle: 'MOON TEMPLE', width: 3550,
+    gravity: 1050, enemySpeed: 116, variant: 6,
+  }),
+  createMaryJumpLevel({
+    name: '天空王城', subtitle: 'SKY CITADEL', width: 3700,
+    gravity: 1060, enemySpeed: 122, variant: 7,
+  }),
 ];
 
 // Backward-compatible aliases for code or tests that still expect the first map.

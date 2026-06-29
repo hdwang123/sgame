@@ -135,7 +135,7 @@ export class MaryJumpScene extends Phaser.Scene {
       this.level.height / 2,
       this.level.width,
       this.level.height,
-      overlayColors[this.levelIndex],
+      overlayColors[this.levelIndex % overlayColors.length],
       0.18,
     ).setDepth(-19);
   }
@@ -143,9 +143,10 @@ export class MaryJumpScene extends Phaser.Scene {
   addPlatform(x, y, width, height) {
     const colors = [0x253846, 0x49312d, 0x302f52];
     const trims = [0x78d5b5, 0xff9f43, 0x9c88ff];
-    const platform = this.add.rectangle(x, y, width, height, colors[this.levelIndex])
-      .setStrokeStyle(2, trims[this.levelIndex], 0.7);
-    this.add.rectangle(x, y - height / 2 + 4, width - 4, 7, trims[this.levelIndex], 0.8);
+    const colorIndex = this.levelIndex % colors.length;
+    const platform = this.add.rectangle(x, y, width, height, colors[colorIndex])
+      .setStrokeStyle(2, trims[colorIndex], 0.7);
+    this.add.rectangle(x, y - height / 2 + 4, width - 4, 7, trims[colorIndex], 0.8);
     this.physics.add.existing(platform, true);
     this.platforms.add(platform);
   }

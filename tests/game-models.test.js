@@ -42,7 +42,7 @@ assert.equal(maryJump.isStomp(
   { y: 40 },
 ), false);
 assert.equal(maryJump.finish('won'), true);
-assert.equal(MARY_JUMP_LEVELS.length, 3);
+assert.equal(MARY_JUMP_LEVELS.length, 10);
 MARY_JUMP_LEVELS.forEach((level) => {
   assert.ok(level.goal.x < level.width);
   assert.ok(level.platforms.length > 0);
@@ -66,9 +66,10 @@ for (const [x, y] of ENEMY_SPAWNS) {
 }
 assert.equal(tank.finish(false), true);
 assert.equal(tank.won, false);
-assert.equal(TANK_LEVELS.length, 3);
+assert.equal(TANK_LEVELS.length, 10);
 TANK_LEVELS.forEach((level) => {
   assert.ok(level.walls.length > 0);
+  assert.ok(level.breakableWalls.length >= 4);
   assert.ok(level.enemySpawns.length > 0);
   assert.ok(level.enemySpeed > 0);
   [...level.enemySpawns, level.playerSpawn, level.base].forEach(([x, y]) => {
@@ -76,7 +77,7 @@ TANK_LEVELS.forEach((level) => {
     assert.ok(y >= TANK_ARENA.y && y <= TANK_ARENA.y + TANK_ARENA.height);
   });
   [...level.enemySpawns, level.playerSpawn].forEach(([x, y]) => {
-    const intersectsWall = level.walls.some(([wallX, wallY, width, height]) => (
+    const intersectsWall = [...level.walls, ...level.breakableWalls].some(([wallX, wallY, width, height]) => (
       Math.abs(x - wallX) < width / 2 + 22 && Math.abs(y - wallY) < height / 2 + 26
     ));
     assert.equal(intersectsWall, false);

@@ -5,6 +5,16 @@ import { soundFX } from '../audio/SoundFX.js';
 import { mobileControls } from '../ui/MobileControls.js';
 import { showSceneLoader } from '../ui/SceneLoader.js';
 
+const POWER_UPS = [
+  { key: 'freeze', label: '停', color: 0x74c0fc, name: '敌军冻结 30 秒' },
+  { key: 'bomb', label: '爆', color: 0xff922b, name: '全屏歼灭' },
+  { key: 'shield', label: '盾', color: 0xb197fc, name: '无敌 30 秒' },
+  { key: 'life', label: '命', color: 0x69db7c, name: '生命 +1' },
+  { key: 'fortify', label: '墙', color: 0xe9ecef, name: '基地钢墙 30 秒' },
+];
+
+const POWER_DURATION = 30000;
+
 export class TankScene extends Phaser.Scene {
   constructor() {
     super('tank');
@@ -22,7 +32,7 @@ export class TankScene extends Phaser.Scene {
   create(data = {}) {
     this.levelIndex = Phaser.Math.Clamp(data.levelIndex ?? 0, 0, TANK_LEVELS.length - 1);
     this.level = TANK_LEVELS[this.levelIndex];
-    this.playerSpawn = [this.level.base[0], this.level.base[1] - 70];
+    this.playerSpawn = [...this.level.playerSpawn];
     this.stageStartScore = data.score ?? 0;
     this.stageStartLives = data.lives ?? TANK_RULES.initialLives;
     this.phase = 'playing';
@@ -39,6 +49,8 @@ export class TankScene extends Phaser.Scene {
 
     this.walls = this.physics.add.staticGroup();
     this.level.walls.forEach((wall) => this.addWall(...wall));
+    this.breakableWalls = this.physics.add.staticGroup();
+    this.level.breakableWalls.forEach((wall) => this.addBreakableWall(...wall));
     this.base = this.physics.add.staticSprite(...this.level.base, 'baseCastle')
       .setDisplaySize(64, 64)
       .refreshBody();
@@ -50,14 +62,21 @@ export class TankScene extends Phaser.Scene {
     this.player.body.setSize(200, 200).setOffset(28, 28);
     this.playerShield = null;
     this.shieldExpiresAt = 0;
+    this.playerInvincibleUntil = 0;
+    this.enemiesFrozenUntil = 0;
+    this.baseProtectionExpiresAt = 0;
     this.activatePlayerShield(this.player);
     this.bullets = this.physics.add.group({ maxSize: 40 });
     this.enemyBullets = this.physics.add.group({ maxSize: 50 });
     this.enemies = this.physics.add.group();
+    this.powerUps = this.physics.add.group({ allowGravity: false, immovable: true });
+    this.baseSteelWalls = this.physics.add.staticGroup();
     this.level.enemySpawns.forEach(([x, y], index) => this.spawnEnemy(x, y, index));
 
     this.physics.add.collider(this.player, this.walls);
     this.physics.add.collider(this.enemies, this.walls);
+    this.physics.add.collider(this.player, this.breakableWalls);
+    this.physics.add.collider(this.enemies, this.breakableWalls, (enemy) => enemy.setData('turnAt', 0));
     this.physics.add.collider(this.enemies, this.enemies, (enemyA, enemyB) => {
       enemyA.setData('turnAt', 0);
       enemyB.setData('turnAt', 0);
@@ -65,12 +84,23 @@ export class TankScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.enemies);
     this.physics.add.collider(this.player, this.base);
     this.physics.add.collider(this.enemies, this.base, (enemy) => enemy.setData('turnAt', 0));
+    this.physics.add.collider(this.player, this.baseSteelWalls);
+    this.physics.add.collider(this.enemies, this.baseSteelWalls, (enemy) => enemy.setData('turnAt', 0));
     this.physics.add.collider(this.bullets, this.walls, (bullet) => bullet.destroy());
     this.physics.add.collider(this.enemyBullets, this.walls, (bullet) => bullet.destroy());
+    this.physics.add.collider(this.bullets, this.breakableWalls, (bullet, wall) => {
+      this.hitBreakableWall(bullet, wall);
+    });
+    this.physics.add.collider(this.enemyBullets, this.breakableWalls, (bullet, wall) => {
+      this.hitBreakableWall(bullet, wall);
+    });
+    this.physics.add.collider(this.bullets, this.baseSteelWalls, (bullet) => bullet.destroy());
+    this.physics.add.collider(this.enemyBullets, this.baseSteelWalls, (bullet) => bullet.destroy());
     this.physics.add.overlap(this.bullets, this.enemyBullets, (playerBullet, enemyBullet) => {
       this.cancelBullets(playerBullet, enemyBullet);
     });
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => this.hitEnemy(bullet, enemy));
+    this.physics.add.overlap(this.player, this.powerUps, (_, powerUp) => this.collectPowerUp(powerUp));
     // For Group vs Sprite checks Phaser passes the Sprite first, then the Group child.
     this.physics.add.overlap(this.enemyBullets, this.player, (player, bullet) => this.hitPlayer(player, bullet));
     this.physics.add.overlap(this.enemyBullets, this.base, (_, bullet) => {
@@ -105,6 +135,9 @@ export class TankScene extends Phaser.Scene {
     this.hud = this.add.text(830, 22, '', {
       fontFamily: 'Consolas', fontSize: '14px', color: '#d3f9d8',
     }).setOrigin(1, 0);
+    this.powerStatusText = this.add.text(830, 43, '', {
+      fontFamily: 'Consolas', fontSize: '11px', color: '#ffe8a3',
+    }).setOrigin(1, 0).setDepth(10);
     this.add.text(30, 655, 'WASD / 方向键移动  ·  SPACE 射击  ·  P 暂停  ·  R 从第1关开始  ·  ESC 返回游戏厅', {
       fontFamily: 'Arial', fontSize: '11px', color: '#66728b',
     });
@@ -132,6 +165,12 @@ export class TankScene extends Phaser.Scene {
         .lineStyle(3, 0x111418, 0.9).lineBetween(15, 35, 24, 46)
         .lineBetween(45, 28, 38, 43)
         .generateTexture('baseDestroyed', 64, 64);
+      g.clear();
+    }
+    if (!this.textures.exists('powerUp')) {
+      g.fillStyle(0xffffff).fillCircle(18, 18, 16)
+        .lineStyle(3, 0xffffff, 0.95).strokeCircle(18, 18, 16)
+        .generateTexture('powerUp', 36, 36);
     }
     g.destroy();
   }
@@ -145,23 +184,45 @@ export class TankScene extends Phaser.Scene {
     const overlays = [0x071016, 0x15120a, 0x100818];
     const accents = [0x5ecfb1, 0xffc857, 0xb197fc];
     const grid = this.add.graphics();
-    grid.fillStyle(overlays[this.levelIndex], 0.2)
+    grid.fillStyle(overlays[this.levelIndex % overlays.length], 0.2)
       .fillRect(TANK_ARENA.x, TANK_ARENA.y, TANK_ARENA.width, TANK_ARENA.height);
-    grid.lineStyle(1, accents[this.levelIndex], 0.09);
+    grid.lineStyle(1, accents[this.levelIndex % accents.length], 0.09);
     for (let x = 30; x < 840; x += 32) grid.lineBetween(x, 58, x, 638);
     for (let y = 62; y < 638; y += 32) grid.lineBetween(22, y, 838, y);
-    grid.lineStyle(2, accents[this.levelIndex], 0.5)
+    grid.lineStyle(2, accents[this.levelIndex % accents.length], 0.5)
       .strokeRoundedRect(TANK_ARENA.x, TANK_ARENA.y, TANK_ARENA.width, TANK_ARENA.height, 8);
   }
 
   addWall(x, y, width, height) {
     const colors = [0x29343a, 0x4a4030, 0x352f4f];
     const trims = [0x8aa69e, 0xc9a45c, 0x9b8ed1];
-    const wall = this.add.rectangle(x, y, width, height, colors[this.levelIndex], 0.96)
-      .setStrokeStyle(2, trims[this.levelIndex], 0.85);
-    this.add.rectangle(x, y - height / 2 + 4, width - 5, 5, trims[this.levelIndex], 0.6);
+    const colorIndex = this.levelIndex % colors.length;
+    const wall = this.add.rectangle(x, y, width, height, colors[colorIndex], 0.96)
+      .setStrokeStyle(2, trims[colorIndex], 0.85);
+    this.add.rectangle(x, y - height / 2 + 4, width - 5, 5, trims[colorIndex], 0.6);
     this.physics.add.existing(wall, true);
     this.walls.add(wall);
+  }
+
+  addBreakableWall(x, y, width, height) {
+    const wall = this.add.rectangle(x, y, width, height, 0x9c4f32, 0.98)
+      .setStrokeStyle(2, 0xffa06b, 0.9);
+    const bricks = this.add.graphics();
+    bricks.lineStyle(2, 0x54291f, 0.85);
+    const left = x - width / 2;
+    const top = y - height / 2;
+    for (let rowY = top + 11; rowY < top + height; rowY += 11) {
+      bricks.lineBetween(left, rowY, left + width, rowY);
+    }
+    for (let columnX = left + 18; columnX < left + width; columnX += 36) {
+      bricks.lineBetween(columnX, top, columnX, top + height);
+    }
+    for (let columnX = left + 36; columnX < left + width; columnX += 36) {
+      bricks.lineBetween(columnX, top + 11, columnX, top + height);
+    }
+    wall.setData('decoration', bricks);
+    this.physics.add.existing(wall, true);
+    this.breakableWalls.add(wall);
   }
 
   spawnEnemy(x, y, index) {
@@ -265,6 +326,32 @@ export class TankScene extends Phaser.Scene {
     playerBullet.destroy();
     enemyBullet.destroy();
     soundFX.play('stomp');
+  }
+
+  hitBreakableWall(bullet, wall) {
+    if (this.phase !== 'playing' || !bullet.active || !wall.active) return;
+    const { x, y } = wall;
+    bullet.destroy();
+    wall.getData('decoration')?.destroy();
+    wall.destroy();
+    soundFX.play('explosion');
+    const colors = [0xffa06b, 0x9c4f32, 0x54291f];
+    for (let index = 0; index < 7; index += 1) {
+      const angle = (Math.PI * 2 * index) / 7;
+      const fragment = this.add.rectangle(x, y, 7, 5, colors[index % colors.length])
+        .setRotation(angle)
+        .setDepth(12);
+      this.tweens.add({
+        targets: fragment,
+        x: x + Math.cos(angle) * (22 + (index % 2) * 8),
+        y: y + Math.sin(angle) * (22 + (index % 2) * 8),
+        rotation: angle + Math.PI,
+        alpha: 0,
+        scale: 0.35,
+        duration: 260 + (index % 3) * 45,
+        onComplete: () => fragment.destroy(),
+      });
+    }
   }
 
   hitEnemy(bullet, enemy) {
