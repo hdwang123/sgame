@@ -26,98 +26,98 @@ npm run build
 
 每款游戏都提供触摸“重开”和“返回”按钮。俄罗斯方块在手机上使用紧凑双栏布局：棋盘在左，标题、计分和下一个方块在右，通过压缩空白区域放大整体画面。
 
-## 控制逻辑架构图
+## 俄罗斯方块实现原理流程图
 
 ```mermaid
 flowchart TB
-  PAGE["index.html<br/>游戏容器与触摸按钮"] --> BOOT["main.js<br/>创建 Phaser.Game"]
-  BOOT --> ENGINE["Phaser 3<br/>场景 / 渲染 / Arcade Physics / 时间事件"]
-  ENGINE --> MENU["MenuScene<br/>游戏厅与游戏选择"]
+  START["进入 TetrisScene"] --> INIT["创建 TetrisGame<br/>初始化 10×20 棋盘与七袋随机方块"]
+  INIT --> SPAWN["生成当前方块<br/>同时准备下一个方块"]
+  SPAWN --> COLLIDE_SPAWN{"出生位置发生碰撞？"}
+  COLLIDE_SPAWN -->|"是"| GAME_OVER["游戏结束<br/>显示得分与重新开始提示"]
+  COLLIDE_SPAWN -->|"否"| DRAW["绘制棋盘、活动方块、幽灵落点<br/>下一个方块、分数、行数和等级"]
 
-  subgraph INPUT["输入层"]
-    direction LR
-    KEYBOARD["键盘<br/>方向键 / WASD / 功能键"]
-    POINTER["鼠标 / 触摸卡片"]
-    TOUCH["移动端触摸面板"]
-    MOBILE["MobileControls<br/>配置按键、保持按压状态、绑定当前场景"]
-    TOUCH --> MOBILE
-  end
+  DRAW --> LOOP["Phaser update 循环"]
+  LOOP --> STATE{"暂停或游戏结束？"}
+  STATE -->|"是"| WAIT["停止自动下落<br/>等待继续、重开或返回"]
+  STATE -->|"否"| INPUT{"键盘 / 触屏输入"}
 
-  KEYBOARD --> MENU
-  POINTER --> MENU
-  MENU -->|"选择 1 / 2 / 3 / 4"| ROUTER{"启动游戏场景"}
+  INPUT -->|"左右"| MOVE["尝试水平移动"]
+  INPUT -->|"上 / Z / 旋转"| ROTATE["旋转矩阵<br/>尝试左右踢墙修正"]
+  INPUT -->|"下 / 软降"| SOFT["缩短下落间隔<br/>每格增加分数"]
+  INPUT -->|"Space / 直落"| HARD["移动到幽灵落点<br/>按距离增加分数"]
+  INPUT -->|"无操作"| TIMER["累计自动下落时间"]
 
-  subgraph SCENES["场景控制层"]
-    direction LR
-    TETRIS["TetrisScene<br/>移动 / 旋转 / 软降 / 直落<br/>计时下落 → 锁定 → 消行"]
-    SNAKE["SnakeScene<br/>转向 / 速度档位 / 暂停<br/>定时步进 → 吃食物 / 碰撞"]
-    MARY["MaryJumpScene<br/>移动 / 跳跃 / 踩敌 / 收集<br/>物理碰撞 → 失败 / 到达终点"]
-    TANK["TankScene<br/>驾驶 / 射击 / 敌军决策<br/>碰撞 → 爆炸 / 重生 / 基地判定"]
-  end
+  MOVE --> VALID_MOVE{"新位置碰撞？"}
+  ROTATE --> VALID_MOVE
+  VALID_MOVE -->|"否"| REDRAW["播放反馈并重绘"]
+  VALID_MOVE -->|"是"| LOOP
+  TIMER --> INTERVAL{"达到当前等级的下落间隔？"}
+  INTERVAL -->|"否"| LOOP
+  INTERVAL -->|"是"| DOWN["尝试向下移动一格"]
+  SOFT --> DOWN
+  DOWN --> BLOCKED{"下方发生碰撞？"}
+  BLOCKED -->|"否"| REDRAW
+  BLOCKED -->|"是"| LOCK["把活动方块写入棋盘"]
+  HARD --> LOCK
 
-  ROUTER --> TETRIS
-  ROUTER --> SNAKE
-  ROUTER --> MARY
-  ROUTER --> TANK
-  KEYBOARD --> SCENES
-  MOBILE --> SCENES
+  LOCK --> CLEAR["检查并删除填满的行<br/>顶部补充空行"]
+  CLEAR --> SCORE["按消除行数和等级计分<br/>每 10 行提升等级并加快下落"]
+  SCORE --> SPAWN
+  REDRAW --> LOOP
+  WAIT -->|"继续"| LOOP
+  WAIT -->|"重开"| START
+  WAIT -->|"ESC / 返回"| MENU["回到游戏厅"]
+```
 
-  subgraph MODELS["独立规则模型层"]
-    direction LR
-    TM["TetrisGame<br/>方块、棋盘、碰撞、计分、等级"]
-    SM["SnakeGame<br/>蛇身、方向、食物、速度、死亡"]
-    MM["MaryJumpGame<br/>金币、踩敌、得分、结果"]
-    KM["TankGame<br/>生命、射击节流、敌军行为、得分"]
-    CONFIG["各游戏 config.js<br/>地图、关卡、速度、计分规则"]
-  end
+## 玛丽跳跃流程图
 
-  TETRIS <-->|"命令 / 状态结果"| TM
-  SNAKE <-->|"命令 / 状态结果"| SM
-  MARY <-->|"命令 / 状态结果"| MM
-  TANK <-->|"命令 / 状态结果"| KM
-  CONFIG --> TM
-  CONFIG --> SM
-  CONFIG --> MM
-  CONFIG --> KM
-  CONFIG --> SCENES
+```mermaid
+flowchart TB
+  START["进入 MaryJumpScene"] --> LEVEL["读取当前关卡配置<br/>尺寸、重力、平台、金币、敌人和终点"]
+  LEVEL --> WORLD["创建 Arcade Physics 世界<br/>生成角色、平台、金币、敌人和终点旗帜"]
+  WORLD --> INTRO["显示关卡介绍<br/>开始跟随角色的摄像机"]
+  INTRO --> LOOP["Phaser update 循环"]
 
-  subgraph OUTPUT["表现与反馈层"]
-    direction LR
-    VIEW["Phaser Game Objects<br/>画面、HUD、提示层、动画"]
-    PHYSICS["Arcade Physics<br/>角色、平台、墙体、子弹碰撞"]
-    AUDIO["SoundFX<br/>移动、得分、射击、爆炸、胜负音效"]
-  end
+  LOOP --> PHASE{"当前状态是 playing？"}
+  PHASE -->|"否"| WAIT["等待继续、重试或返回"]
+  PHASE -->|"是"| INPUT["读取键盘 / 触屏输入"]
+  INPUT --> HORIZONTAL{"左 / 右 / 无方向"}
+  HORIZONTAL -->|"左或右"| RUN["设置水平速度与角色朝向"]
+  HORIZONTAL -->|"无方向"| STOP["水平速度归零"]
+  INPUT --> JUMP{"收到跳跃输入？"}
+  JUMP -->|"是"| BUFFER["记录 160ms 跳跃缓冲"]
+  BUFFER --> GROUNDED{"角色着地<br/>或仍在 110ms 土狼时间内？"}
+  GROUNDED -->|"是"| TAKEOFF["施加向上的跳跃速度"]
+  GROUNDED -->|"否"| PHYSICS
+  JUMP -->|"否"| PHYSICS["物理引擎更新重力、位置与碰撞"]
+  RUN --> PHYSICS
+  STOP --> PHYSICS
+  TAKEOFF --> PHYSICS
 
-  SCENES --> VIEW
-  MARY --> PHYSICS
-  TANK --> PHYSICS
-  SCENES --> AUDIO
+  PHYSICS --> EVENT{"本帧发生什么？"}
+  EVENT -->|"收集金币"| COIN["销毁金币<br/>增加分数并更新 HUD"]
+  EVENT -->|"碰到敌人"| STOMP{"角色正在下落且位于敌人上方？"}
+  STOMP -->|"是"| DEFEAT["消灭敌人、反弹<br/>增加分数"]
+  STOMP -->|"否"| LOSE["挑战失败<br/>暂停物理世界"]
+  EVENT -->|"掉出地图"| LOSE
+  EVENT -->|"碰到终点旗帜"| COMPLETE["关卡完成<br/>增加通关奖励"]
+  EVENT -->|"无事件"| ENEMY["敌人在巡逻边界或撞墙时掉头"]
 
-  subgraph FLOW["统一场景流转"]
-    direction LR
-    PAUSE["暂停 / 恢复"]
-    RETRY["重试本关"]
-    FIRST["从第 1 关开始"]
-    NEXT["过关 → 下一关"]
-    HOME["ESC / 返回 → 游戏厅"]
-  end
+  COIN --> ENEMY
+  DEFEAT --> ENEMY
+  ENEMY --> LOOP
+  LOSE --> WAIT
+  COMPLETE --> FINAL{"是否为最后一关？"}
+  FINAL -->|"否"| NEXT["短暂显示过关提示<br/>携带分数进入下一关"]
+  FINAL -->|"是"| ALL_CLEAR["显示全部通关与总分"]
+  NEXT --> LEVEL
+  ALL_CLEAR --> WAIT
 
-  TETRIS --> PAUSE
-  SNAKE --> PAUSE
-  PAUSE --> TETRIS
-  PAUSE --> SNAKE
-  SCENES --> RETRY
-  SCENES --> HOME
-  RETRY --> SCENES
-  MARY --> FIRST
-  TANK --> FIRST
-  FIRST --> MARY
-  FIRST --> TANK
-  MARY --> NEXT
-  TANK --> NEXT
-  NEXT --> MARY
-  NEXT --> TANK
-  HOME --> MENU
+  WAIT -->|"Enter / 重试"| RETRY["从本关起点恢复本关初始分数"]
+  WAIT -->|"R / 第1关"| FIRST["分数归零并从第 1 关开始"]
+  WAIT -->|"ESC / 返回"| MENU["回到游戏厅"]
+  RETRY --> LEVEL
+  FIRST --> LEVEL
 ```
 
 ## 分层结构
@@ -154,14 +154,4 @@ src/
 分层原则：`game/` 决定“游戏怎么算”，`scenes/` 决定“怎么接收输入、使用 Phaser 物理并显示出来”。
 
 平台游戏与坦克大战的原创像素素材位于 `public/assets/`。四款游戏共用 `SoundFX.js` 提供的移动、旋转、吞食、跳跃、金币、射击、爆炸和胜负音效。
-
-## 游戏页面
-
-### 小游戏厅
-
-![小游戏厅](doc/GameLobby.png)
-
-### 俄罗斯方块
-
-![俄罗斯方块](doc/Tetris.png)
 
