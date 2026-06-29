@@ -109,6 +109,15 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
 .touch-speed-selector { display: none; }
 
 @media (pointer: coarse), (max-width: 800px) {
+  html,
+  body,
+  .app-shell {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-drag: none;
+  }
+
   .game-card,
   .touch-controls {
     -webkit-backdrop-filter: none;

@@ -32,8 +32,17 @@ class MobileControls {
     this.buttons = new Map();
     this.pressed = new Set();
     this.listeners = new Map();
+    this.preventMobileBrowserMenus();
     this.bindButtons();
     this.setProfile('menu');
+  }
+
+  preventMobileBrowserMenus() {
+    const usesTouchLayout = globalThis.matchMedia?.('(pointer: coarse), (max-width: 800px)').matches;
+    if (!usesTouchLayout) return;
+    ['contextmenu', 'selectstart', 'dragstart'].forEach((eventName) => {
+      document.addEventListener(eventName, (event) => event.preventDefault());
+    });
   }
 
   bindButtons() {
