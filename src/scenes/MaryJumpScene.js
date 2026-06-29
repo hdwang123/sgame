@@ -78,8 +78,10 @@ export class MaryJumpScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('A,D,W,SPACE');
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('menu'));
     this.input.keyboard.on('keydown-ENTER', () => this.handleContinue());
+    this.input.keyboard.on('keydown-R', () => this.restartFromFirstLevel());
     mobileControls.bindScene(this, 'maryJump', {
       primary: () => this.queueJump(),
+      secondary: () => this.restartFromFirstLevel(),
       restart: () => this.restartLevel(),
       home: () => this.scene.start('menu'),
     });
@@ -97,7 +99,7 @@ export class MaryJumpScene extends Phaser.Scene {
     this.scoreText = this.add.text(830, 25, '', {
       fontFamily: 'Consolas', fontSize: '14px', color: '#ffe8cc',
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(10);
-    this.add.text(24, 62, '方向键 / AD 移动  ·  ↑ / W / SPACE 跳跃  ·  ESC 返回', {
+    this.add.text(24, 62, '方向键 / AD 移动  ·  ↑ / W / SPACE 跳跃  ·  R 从第1关开始  ·  ESC 返回', {
       fontFamily: 'Arial', fontSize: '11px', color: '#a5b4d4',
     }).setScrollFactor(0).setDepth(10);
     this.message = this.add.text(430, 310, '', {
@@ -214,7 +216,7 @@ export class MaryJumpScene extends Phaser.Scene {
     this.model.finish('lost');
     soundFX.play('hurt');
     this.physics.pause();
-    this.message.setText(`挑战失败\n${reason}\n按 ENTER 重试本关`).setVisible(true);
+    this.message.setText(`挑战失败\n${reason}\nENTER 重试本关  ·  R 从第1关开始`).setVisible(true);
   }
 
   completeLevel() {
@@ -250,6 +252,11 @@ export class MaryJumpScene extends Phaser.Scene {
 
   restartLevel() {
     this.scene.restart({ levelIndex: this.levelIndex, score: this.levelStartScore });
+  }
+
+  restartFromFirstLevel() {
+    if (this.levelIndex === 0 && this.phase === 'playing') return;
+    this.scene.restart({ levelIndex: 0, score: 0 });
   }
 
   updateHud() {

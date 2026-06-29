@@ -14,14 +14,14 @@ const PROFILES = {
     selected: 'speed-normal',
   },
   maryJump: {
-    controls: ['left', 'right', 'primary', 'restart', 'home'],
-    hint: '按住左右移动 · 轻触 A 跳跃',
-    labels: { primary: ['▲', '跳跃'] },
+    controls: ['left', 'right', 'primary', 'secondary', 'restart', 'home'],
+    hint: '按住左右移动 · A 跳跃 · B 从第1关开始',
+    labels: { primary: ['▲', '跳跃'], secondary: ['1', '第1关'] },
   },
   tank: {
-    controls: ['up', 'left', 'down', 'right', 'primary', 'restart', 'home'],
-    hint: '按住方向键驾驶 · 按住 A 连续开火',
-    labels: { primary: ['●', '开火'] },
+    controls: ['up', 'left', 'down', 'right', 'primary', 'secondary', 'restart', 'home'],
+    hint: '按住方向键驾驶 · A 开火 · B 从第1关开始',
+    labels: { primary: ['●', '开火'], secondary: ['1', '第1关'] },
   },
 };
 

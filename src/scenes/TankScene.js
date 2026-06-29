@@ -84,7 +84,9 @@ export class TankScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('W,A,S,D,SPACE');
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('menu'));
     this.input.keyboard.on('keydown-ENTER', () => this.handleContinue());
+    this.input.keyboard.on('keydown-R', () => this.restartFromFirstLevel());
     mobileControls.bindScene(this, 'tank', {
+      secondary: () => this.restartFromFirstLevel(),
       restart: () => this.restartLevel(),
       home: () => this.scene.start('menu'),
     });
@@ -101,7 +103,7 @@ export class TankScene extends Phaser.Scene {
     this.hud = this.add.text(830, 22, '', {
       fontFamily: 'Consolas', fontSize: '14px', color: '#d3f9d8',
     }).setOrigin(1, 0);
-    this.add.text(30, 655, 'WASD / 方向键移动  ·  SPACE 射击  ·  ESC 返回游戏厅', {
+    this.add.text(30, 655, 'WASD / 方向键移动  ·  SPACE 射击  ·  R 从第1关开始  ·  ESC 返回游戏厅', {
       fontFamily: 'Arial', fontSize: '11px', color: '#66728b',
     });
     this.message = this.add.text(430, 340, '', {
@@ -113,9 +115,22 @@ export class TankScene extends Phaser.Scene {
   }
 
   makeTextures() {
-    if (this.textures.exists('bullet')) return;
     const g = this.make.graphics({ add: false });
-    g.fillStyle(0xfff3bf).fillCircle(4, 4, 4).generateTexture('bullet', 8, 8);
+    if (!this.textures.exists('bullet')) {
+      g.fillStyle(0xfff3bf).fillCircle(4, 4, 4).generateTexture('bullet', 8, 8);
+      g.clear();
+    }
+    if (!this.textures.exists('baseDestroyed')) {
+      g.fillStyle(0x20252a).fillRect(7, 43, 50, 14)
+        .fillStyle(0x343a40).fillTriangle(5, 48, 19, 27, 31, 49)
+        .fillTriangle(24, 49, 39, 20, 48, 49)
+        .fillTriangle(39, 49, 53, 31, 60, 49)
+        .fillStyle(0xff6b35).fillTriangle(26, 45, 34, 29, 38, 46)
+        .fillStyle(0xffd43b).fillTriangle(30, 45, 34, 35, 36, 45)
+        .lineStyle(3, 0x111418, 0.9).lineBetween(15, 35, 24, 46)
+        .lineBetween(45, 28, 38, 43)
+        .generateTexture('baseDestroyed', 64, 64);
+    }
     g.destroy();
   }
 
@@ -176,6 +191,10 @@ export class TankScene extends Phaser.Scene {
   }
 
   updatePlayer(time) {
+    if (this.player.getData('recovering')) {
+      this.player.setVelocity(0);
+      return;
+    }
     let moving = false;
     if (this.cursors.left.isDown || this.keys.A.isDown || mobileControls.isDown('left')) {
       this.player.setVelocity(-TANK_RULES.playerSpeed, 0).setAngle(-90); moving = true;
@@ -248,9 +267,11 @@ export class TankScene extends Phaser.Scene {
 
   hitEnemy(bullet, enemy) {
     if (this.phase !== 'playing' || !enemy.active) return;
+    const { x, y } = enemy;
     bullet.destroy();
     enemy.destroy();
     soundFX.play('explosion');
+    this.createTankExplosion(x, y);
     const stageCleared = this.model.hitEnemy(this.enemies.countActive());
     this.updateHud();
     if (stageCleared) this.completeLevel();
@@ -262,6 +283,7 @@ export class TankScene extends Phaser.Scene {
     if (player.getData('recovering')) return;
     if (this.time.now < player.getData('lastHit') + TANK_RULES.hitImmunity) return;
     player.setData('lastHit', this.time.now);
+    this.createTankExplosion(player.x, player.y);
     this.model.hitPlayer();
     soundFX.play('hurt');
     this.updateHud();
@@ -275,12 +297,14 @@ export class TankScene extends Phaser.Scene {
 
   recoverPlayerAfterHit(player) {
     player.setData('recovering', true);
-    this.events.once('postupdate', () => {
+    player.setVelocity(0).setVisible(false);
+    player.body.enable = false;
+    [...this.enemyBullets.getChildren()].forEach((enemyBullet) => enemyBullet.destroy());
+    this.time.delayedCall(1000, () => {
       if (this.phase !== 'playing' || !player.active) return;
-      [...this.enemyBullets.getChildren()].forEach((enemyBullet) => enemyBullet.destroy());
       player.body.enable = true;
       player.body.reset(...this.playerSpawn);
-      player.setVelocity(0).setAngle(0).setAlpha(1).setData('recovering', false);
+      player.setVelocity(0).setAngle(0).setAlpha(1).setVisible(true).setData('recovering', false);
       this.activatePlayerShield(player);
     });
   }
@@ -318,7 +342,7 @@ export class TankScene extends Phaser.Scene {
     this.phase = 'base-hit';
     this.physics.pause();
     soundFX.play('explosion');
-    this.base.setTint(0xff6b3d);
+    this.base.clearTint().setTexture('baseDestroyed').setDisplaySize(64, 64).refreshBody();
     this.cameras.main.shake(320, 0.012);
     this.createBaseExplosion();
     this.time.delayedCall(420, () => this.endGame(false, reason, false));
@@ -388,7 +412,7 @@ export class TankScene extends Phaser.Scene {
     soundFX.play(won ? 'win' : 'lose');
     if (!won && playExplosion) soundFX.play('explosion');
     this.physics.pause();
-    this.message.setText(`${reason}\n得分 ${this.model.score}\n按 ENTER 重试本关`).setVisible(true);
+    this.message.setText(`${reason}\n得分 ${this.model.score}\nENTER 重试本关  ·  R 从第1关开始`).setVisible(true);
   }
 
   handleContinue() {
@@ -411,6 +435,68 @@ export class TankScene extends Phaser.Scene {
       score: this.stageStartScore,
       lives: this.stageStartLives,
     });
+  }
+
+  createTankExplosion(x, y) {
+    const flash = this.add.circle(x, y, 9, 0xffffff, 1).setDepth(18);
+    const fireball = this.add.circle(x, y, 16, 0xff922b, 0.95)
+      .setStrokeStyle(5, 0xffd43b, 0.9)
+      .setDepth(17);
+    const shockwave = this.add.circle(x, y, 18, 0x000000, 0)
+      .setStrokeStyle(3, 0xffe066, 0.9)
+      .setDepth(16);
+    this.tweens.add({
+      targets: flash,
+      scale: 2.4,
+      alpha: 0,
+      duration: 150,
+      onComplete: () => flash.destroy(),
+    });
+    this.tweens.add({
+      targets: fireball,
+      scale: 2.2,
+      alpha: 0,
+      duration: 320,
+      ease: 'Quad.easeOut',
+      onComplete: () => fireball.destroy(),
+    });
+    this.tweens.add({
+      targets: shockwave,
+      scale: 2.8,
+      alpha: 0,
+      duration: 360,
+      ease: 'Cubic.easeOut',
+      onComplete: () => shockwave.destroy(),
+    });
+
+    const colors = [0xffd43b, 0xff922b, 0xff4d4f, 0xced4da];
+    for (let index = 0; index < 10; index += 1) {
+      const angle = (Math.PI * 2 * index) / 10;
+      const distance = 28 + (index % 3) * 9;
+      const fragment = this.add.rectangle(
+        x,
+        y,
+        4 + (index % 2) * 2,
+        7,
+        colors[index % colors.length],
+      ).setRotation(angle).setDepth(19);
+      this.tweens.add({
+        targets: fragment,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        rotation: angle + Math.PI,
+        scale: 0.25,
+        alpha: 0,
+        duration: 280 + (index % 3) * 55,
+        ease: 'Quad.easeOut',
+        onComplete: () => fragment.destroy(),
+      });
+    }
+  }
+
+  restartFromFirstLevel() {
+    if (this.levelIndex === 0 && this.phase === 'playing') return;
+    this.scene.restart({ levelIndex: 0, score: 0, lives: TANK_RULES.initialLives });
   }
 
   updateHud() {

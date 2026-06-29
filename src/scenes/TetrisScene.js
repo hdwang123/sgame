@@ -2,16 +2,20 @@ import Phaser from 'phaser';
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
-  CELL_SIZE,
   PIECES,
 } from '../game/tetris/config.js';
 import { TetrisGame } from '../game/tetris/TetrisGame.js';
 import { soundFX } from '../audio/SoundFX.js';
 import { mobileControls } from '../ui/MobileControls.js';
 
-const BOARD_X = 72;
-const BOARD_Y = 58;
-const PANEL_X = 418;
+const DESKTOP_CELL_SIZE = 31;
+const DESKTOP_BOARD_X = 54;
+const DESKTOP_BOARD_Y = 30;
+const DESKTOP_PANEL_X = 470;
+const MOBILE_CELL_SIZE = 31;
+const MOBILE_BOARD_X = 10;
+const MOBILE_BOARD_Y = 30;
+const MOBILE_PANEL_X = 330;
 
 export class TetrisScene extends Phaser.Scene {
   constructor() {
@@ -21,10 +25,10 @@ export class TetrisScene extends Phaser.Scene {
   create() {
     this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
     this.scale.resize(this.isMobileLayout ? 620 : 860, 680);
-    this.boardX = this.isMobileLayout ? 20 : BOARD_X;
-    this.boardY = BOARD_Y;
-    this.cellSize = CELL_SIZE;
-    this.panelX = this.isMobileLayout ? 320 : PANEL_X;
+    this.boardX = this.isMobileLayout ? MOBILE_BOARD_X : DESKTOP_BOARD_X;
+    this.boardY = this.isMobileLayout ? MOBILE_BOARD_Y : DESKTOP_BOARD_Y;
+    this.cellSize = this.isMobileLayout ? MOBILE_CELL_SIZE : DESKTOP_CELL_SIZE;
+    this.panelX = this.isMobileLayout ? MOBILE_PANEL_X : DESKTOP_PANEL_X;
     this.model = new TetrisGame();
     this.isPaused = false;
     this.dropAccumulator = 0;
@@ -99,12 +103,21 @@ export class TetrisScene extends Phaser.Scene {
     this.addControl('P', '暂停游戏', 608);
     this.addControl('ESC', '返回游戏厅', 638);
 
-    this.overlay = this.add.rectangle(this.boardX + 140, this.boardY + 280, 280, 560, 0x070912, 0.86)
+    const boardWidth = BOARD_WIDTH * this.cellSize;
+    const boardHeight = BOARD_HEIGHT * this.cellSize;
+    this.overlay = this.add.rectangle(
+      this.boardX + boardWidth / 2,
+      this.boardY + boardHeight / 2,
+      boardWidth,
+      boardHeight,
+      0x070912,
+      0.86,
+    )
       .setVisible(false).setDepth(20);
-    this.overlayTitle = this.add.text(this.boardX + 140, this.boardY + 248, '', {
+    this.overlayTitle = this.add.text(this.boardX + boardWidth / 2, this.boardY + boardHeight / 2 - 32, '', {
       fontFamily: 'Arial Black, Arial', fontSize: '30px', color: '#ffffff', align: 'center',
     }).setOrigin(0.5).setDepth(21).setVisible(false);
-    this.overlayHint = this.add.text(this.boardX + 140, this.boardY + 298, '', {
+    this.overlayHint = this.add.text(this.boardX + boardWidth / 2, this.boardY + boardHeight / 2 + 18, '', {
       fontFamily: 'Arial', fontSize: '14px', color: '#adb5bd', align: 'center',
     }).setOrigin(0.5).setDepth(21).setVisible(false);
   }
