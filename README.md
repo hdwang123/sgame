@@ -155,3 +155,102 @@ flowchart TB
   FIRST --> LEVEL
 ```
 
+## 贪吃蛇流程图
+
+```mermaid
+flowchart TB
+  START["进入 SnakeScene"] --> INIT["创建 SnakeGame<br/>在棋盘中央生成蛇身、方向和食物"]
+  INIT --> SPEED["设置标准速度<br/>绘制棋盘、蛇、食物和分数"]
+  SPEED --> LOOP["Phaser update 循环"]
+
+  LOOP --> STATE{"游戏结束或暂停？"}
+  STATE -->|"是"| WAIT["停止步进<br/>等待继续、重开或返回"]
+  STATE -->|"否"| INPUT{"键盘 / 触屏输入"}
+  INPUT -->|"方向键 / WASD"| TURN["记录下一移动方向<br/>拒绝直接反向"]
+  INPUT -->|"慢速 / 标准 / 快速"| SET_SPEED["切换基础步进间隔<br/>重置本轮计时"]
+  INPUT -->|"P / 暂停"| PAUSE["切换暂停状态并显示提示"]
+  INPUT -->|"无操作"| TIMER["累计步进时间"]
+  TURN --> TIMER
+  SET_SPEED --> TIMER
+  PAUSE --> LOOP
+
+  TIMER --> READY{"达到当前步进间隔？"}
+  READY -->|"否"| LOOP
+  READY -->|"是"| HEAD["按下一方向计算新蛇头位置"]
+  HEAD --> COLLISION{"撞到边界或自身？"}
+  COLLISION -->|"是"| GAME_OVER["标记游戏结束<br/>播放失败音效并显示得分"]
+  COLLISION -->|"否"| ADVANCE["把新蛇头加入蛇身"]
+  ADVANCE --> EAT{"新蛇头碰到食物？"}
+  EAT -->|"否"| TAIL["移除蛇尾<br/>保持蛇身长度"]
+  EAT -->|"是"| GROW["保留蛇尾使蛇身增长<br/>增加分数和进食次数"]
+  GROW --> ACCELERATE["根据进食次数逐步加速<br/>随机生成不与蛇身重叠的新食物"]
+  TAIL --> REDRAW["重绘蛇与食物"]
+  ACCELERATE --> REDRAW
+  REDRAW --> LOOP
+
+  GAME_OVER --> WAIT
+  WAIT -->|"P / 继续"| LOOP
+  WAIT -->|"Enter / 重开"| START
+  WAIT -->|"ESC / 返回"| MENU["回到游戏厅"]
+```
+
+## 坦克大战流程图
+
+```mermaid
+flowchart TB
+  START["进入 TankScene"] --> LEVEL["读取当前战区配置<br/>地图、墙体、基地、出生点和敌军参数"]
+  LEVEL --> INIT["创建 TankGame<br/>恢复本关起始分数与生命"]
+  INIT --> WORLD["创建 Arcade Physics 战场<br/>生成基地、玩家、敌军和子弹组"]
+  WORLD --> SHIELD["玩家出生并开启短暂无敌护盾"]
+  SHIELD --> LOOP["Phaser update 循环"]
+
+  LOOP --> PHASE{"当前状态是 playing？"}
+  PHASE -->|"否"| WAIT["等待重试、从第1关开始或返回"]
+  PHASE -->|"是"| PLAYER{"玩家是否正在等待重生？"}
+  PLAYER -->|"是"| ENEMY_AI["跳过玩家输入<br/>更新敌军行为"]
+  PLAYER -->|"否"| INPUT["读取键盘 / 触屏输入"]
+  INPUT -->|"方向键 / WASD"| MOVE["设置单方向速度与坦克朝向"]
+  INPUT -->|"Space / 开火"| COOLDOWN{"射击冷却结束？"}
+  COOLDOWN -->|"是"| SHOOT["从炮口生成玩家子弹"]
+  COOLDOWN -->|"否"| ENEMY_AI
+  MOVE --> ENEMY_AI
+  SHOOT --> ENEMY_AI
+
+  ENEMY_AI --> DECIDE["敌军按随机延迟选择方向<br/>遇到障碍时掉头"]
+  DECIDE --> ENEMY_SHOOT["达到射击时间时生成敌军子弹"]
+  ENEMY_SHOOT --> PHYSICS["物理引擎更新坦克、子弹与碰撞"]
+  PHYSICS --> EVENT{"发生哪类碰撞？"}
+
+  EVENT -->|"玩家子弹命中敌军"| HIT_ENEMY["销毁敌军与子弹<br/>播放爆炸并增加分数"]
+  HIT_ENEMY --> REMAIN{"本关仍有敌军？"}
+  REMAIN -->|"有"| LOOP
+  REMAIN -->|"无"| BONUS["增加战区通关奖励"]
+  BONUS --> FINAL{"是否为最后一关？"}
+  FINAL -->|"否"| NEXT["携带分数和剩余生命<br/>进入下一战区"]
+  FINAL -->|"是"| CLEAR["显示全部战区解放与总分"]
+  NEXT --> LEVEL
+  CLEAR --> WAIT
+
+  EVENT -->|"敌军子弹命中玩家"| IMMUNE{"正在恢复或处于无敌期？"}
+  IMMUNE -->|"是"| LOOP
+  IMMUNE -->|"否"| HIT_PLAYER["播放爆炸并扣除一条生命"]
+  HIT_PLAYER --> ALIVE{"仍有生命？"}
+  ALIVE -->|"否"| LOST["任务失败并暂停物理世界"]
+  ALIVE -->|"是"| RESPAWN["隐藏并禁用玩家 1 秒<br/>清除敌军子弹"]
+  RESPAWN --> REAPPEAR["在出生点重新出现<br/>恢复操作并开启护盾"]
+  REAPPEAR --> LOOP
+
+  EVENT -->|"任意子弹命中基地"| BASE["基地切换为燃烧废墟<br/>播放爆炸与震屏"]
+  BASE --> LOST
+  EVENT -->|"子弹撞墙或双方子弹相撞"| REMOVE["销毁发生碰撞的子弹"]
+  EVENT -->|"无关键碰撞"| LOOP
+  REMOVE --> LOOP
+
+  LOST --> WAIT
+  WAIT -->|"Enter / 重试"| RETRY["恢复本关起始分数和生命"]
+  WAIT -->|"R / 第1关"| FIRST["分数归零、生命重置<br/>从第 1 战区开始"]
+  WAIT -->|"ESC / 返回"| MENU["回到游戏厅"]
+  RETRY --> LEVEL
+  FIRST --> LEVEL
+```
+
