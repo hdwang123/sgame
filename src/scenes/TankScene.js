@@ -84,9 +84,11 @@ export class TankScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('W,A,S,D,SPACE');
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('menu'));
     this.input.keyboard.on('keydown-ENTER', () => this.handleContinue());
+    this.input.keyboard.on('keydown-P', () => this.togglePause());
     this.input.keyboard.on('keydown-R', () => this.restartFromFirstLevel());
     mobileControls.bindScene(this, 'tank', {
       secondary: () => this.restartFromFirstLevel(),
+      pause: () => this.togglePause(),
       restart: () => this.restartLevel(),
       home: () => this.scene.start('menu'),
     });
@@ -103,7 +105,7 @@ export class TankScene extends Phaser.Scene {
     this.hud = this.add.text(830, 22, '', {
       fontFamily: 'Consolas', fontSize: '14px', color: '#d3f9d8',
     }).setOrigin(1, 0);
-    this.add.text(30, 655, 'WASD / 方向键移动  ·  SPACE 射击  ·  R 从第1关开始  ·  ESC 返回游戏厅', {
+    this.add.text(30, 655, 'WASD / 方向键移动  ·  SPACE 射击  ·  P 暂停  ·  R 从第1关开始  ·  ESC 返回游戏厅', {
       fontFamily: 'Arial', fontSize: '11px', color: '#66728b',
     });
     this.message = this.add.text(430, 340, '', {
@@ -435,6 +437,19 @@ export class TankScene extends Phaser.Scene {
       score: this.stageStartScore,
       lives: this.stageStartLives,
     });
+  }
+
+  togglePause() {
+    if (this.phase === 'playing') {
+      if (this.player.getData('recovering')) return;
+      this.phase = 'paused';
+      this.physics.pause();
+      this.message.setText('游戏暂停\nPAUSED  ·  按 P 或轻触暂停键继续').setVisible(true);
+    } else if (this.phase === 'paused') {
+      this.phase = 'playing';
+      this.physics.resume();
+      this.message.setVisible(false);
+    }
   }
 
   createTankExplosion(x, y) {

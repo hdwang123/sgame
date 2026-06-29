@@ -78,10 +78,12 @@ export class MaryJumpScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('A,D,W,SPACE');
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('menu'));
     this.input.keyboard.on('keydown-ENTER', () => this.handleContinue());
+    this.input.keyboard.on('keydown-P', () => this.togglePause());
     this.input.keyboard.on('keydown-R', () => this.restartFromFirstLevel());
     mobileControls.bindScene(this, 'maryJump', {
       primary: () => this.queueJump(),
       secondary: () => this.restartFromFirstLevel(),
+      pause: () => this.togglePause(),
       restart: () => this.restartLevel(),
       home: () => this.scene.start('menu'),
     });
@@ -99,7 +101,7 @@ export class MaryJumpScene extends Phaser.Scene {
     this.scoreText = this.add.text(830, 25, '', {
       fontFamily: 'Consolas', fontSize: '14px', color: '#ffe8cc',
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(10);
-    this.add.text(24, 62, '方向键 / AD 移动  ·  ↑ / W / SPACE 跳跃  ·  R 从第1关开始  ·  ESC 返回', {
+    this.add.text(24, 62, '方向键 / AD 移动  ·  ↑ / W / SPACE 跳跃  ·  P 暂停  ·  R 从第1关开始  ·  ESC 返回', {
       fontFamily: 'Arial', fontSize: '11px', color: '#a5b4d4',
     }).setScrollFactor(0).setDepth(10);
     this.message = this.add.text(430, 310, '', {
@@ -252,6 +254,18 @@ export class MaryJumpScene extends Phaser.Scene {
 
   restartLevel() {
     this.scene.restart({ levelIndex: this.levelIndex, score: this.levelStartScore });
+  }
+
+  togglePause() {
+    if (this.phase === 'playing') {
+      this.phase = 'paused';
+      this.physics.pause();
+      this.message.setText('游戏暂停\nPAUSED  ·  按 P 或轻触暂停键继续').setVisible(true);
+    } else if (this.phase === 'paused') {
+      this.phase = 'playing';
+      this.physics.resume();
+      this.message.setVisible(false);
+    }
   }
 
   restartFromFirstLevel() {

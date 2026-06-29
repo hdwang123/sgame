@@ -162,6 +162,31 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   .touch-actions button.touch-small { width: 56px; height: 56px; }
   .touch-actions button.touch-small strong { font-size: 17px; }
   .touch-actions button[hidden], .touch-dpad button[hidden], .touch-speed-selector button[hidden] { display: none; }
+  body[data-game-profile="maryJump"] .touch-actions,
+  body[data-game-profile="tank"] .touch-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 122px;
+    max-width: 122px;
+    justify-content: center;
+  }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="primary"],
+  body[data-game-profile="tank"] .touch-actions [data-control="primary"] { order: 1; }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="pause"],
+  body[data-game-profile="tank"] .touch-actions [data-control="pause"] { order: 2; }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="restart"],
+  body[data-game-profile="tank"] .touch-actions [data-control="restart"] { order: 3; }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="secondary"],
+  body[data-game-profile="tank"] .touch-actions [data-control="secondary"] {
+    order: 4;
+    width: 56px;
+    height: 56px;
+  }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="secondary"] strong,
+  body[data-game-profile="tank"] .touch-actions [data-control="secondary"] strong { font-size: 17px; }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="home"],
+  body[data-game-profile="tank"] .touch-actions [data-control="home"] { order: 5; }
   body[data-game-profile="tetris"] #game-container { aspect-ratio: 620 / 680; }
   body[data-game-profile="tetris"] .brand,
   body[data-game-profile="snake"] .brand,
@@ -248,7 +273,8 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     justify-content: flex-end;
   }
 
-  body[data-game-profile="maryJump"] .touch-controls__body { min-height: 82px; }
+  body[data-game-profile="maryJump"] .touch-controls__body,
+  body[data-game-profile="tank"] .touch-controls__body { min-height: 214px; }
   body[data-game-profile="maryJump"] .touch-dpad {
     grid-template: 62px / repeat(2, 62px);
     gap: 8px;
@@ -256,6 +282,17 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   body[data-game-profile="maryJump"] .touch-dpad button { width: 62px; height: 62px; }
   body[data-game-profile="maryJump"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
   body[data-game-profile="maryJump"] .touch-dpad [data-control="right"] { grid-area: 1 / 2; }
+  body[data-game-profile="maryJump"] .touch-actions,
+  body[data-game-profile="tank"] .touch-actions {
+    width: calc(var(--small-action-size) * 2 + 8px);
+    max-width: calc(var(--small-action-size) * 2 + 8px);
+    gap: 8px;
+  }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="secondary"],
+  body[data-game-profile="tank"] .touch-actions [data-control="secondary"] {
+    width: var(--small-action-size);
+    height: var(--small-action-size);
+  }
 }
 
 @media (max-width: 340px) {
