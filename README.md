@@ -64,6 +64,7 @@ src/
 ## 俄罗斯方块流程图
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
 flowchart TB
   START["进入 TetrisScene"] --> INIT["创建 TetrisGame<br/>初始化 10×20 棋盘与七袋随机方块"]
   INIT --> SPAWN["生成当前方块<br/>同时准备下一个方块"]
@@ -107,6 +108,7 @@ flowchart TB
 ## 玛丽跳跃流程图
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
 flowchart TB
   START["进入 MaryJumpScene"] --> LEVEL["读取当前关卡配置<br/>尺寸、重力、平台、金币、敌人和终点"]
   LEVEL --> WORLD["创建 Arcade Physics 世界<br/>生成角色、平台、金币、敌人和终点旗帜"]
@@ -158,6 +160,7 @@ flowchart TB
 ## 贪吃蛇流程图
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
 flowchart TB
   START["进入 SnakeScene"] --> INIT["创建 SnakeGame<br/>在棋盘中央生成蛇身、方向和食物"]
   INIT --> SPEED["设置标准速度<br/>绘制棋盘、蛇、食物和分数"]
@@ -197,6 +200,7 @@ flowchart TB
 ## 坦克大战流程图
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
 flowchart TB
   START["进入 TankScene"] --> LEVEL["读取当前战区配置<br/>地图、墙体、基地、出生点和敌军参数"]
   LEVEL --> INIT["创建 TankGame<br/>恢复本关起始分数与生命"]
