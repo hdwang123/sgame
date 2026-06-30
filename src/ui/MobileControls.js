@@ -7,21 +7,25 @@ const PROFILES = {
   tetris: {
     controls: ['left', 'right', 'down', 'primary', 'secondary', 'pause', 'restart', 'home'],
     joystick: true,
+    defaultMovementMode: 'buttons',
     labels: { primary: ['↻', 'touch.rotate'], secondary: ['⇣', 'touch.drop'] },
   },
   snake: {
     controls: ['up', 'left', 'down', 'right', 'pause', 'restart', 'home', 'speed-slow', 'speed-normal', 'speed-fast'],
     joystick: true,
+    defaultMovementMode: 'buttons',
     selected: 'speed-normal',
   },
   maryJump: {
-    controls: ['left', 'right', 'primary', 'tertiary', 'secondary', 'pause', 'restart', 'home'],
+    controls: ['left', 'right', 'primary', 'fire', 'tertiary', 'secondary', 'pause', 'restart', 'home'],
     joystick: true,
-    labels: { primary: ['▲', 'touch.jump'], tertiary: ['⇈', 'touch.bigJump'], secondary: ['1', 'touch.first'] },
+    defaultMovementMode: 'joystick',
+    labels: { primary: ['▲', 'touch.jump'], fire: ['●', 'touch.fire'], tertiary: ['⇈', 'touch.bigJump'], secondary: ['1', 'touch.first'] },
   },
   tank: {
     controls: ['up', 'left', 'down', 'right', 'primary', 'secondary', 'pause', 'restart', 'home'],
     joystick: true,
+    defaultMovementMode: 'joystick',
     labels: { primary: ['●', 'touch.fire'], secondary: ['1', 'touch.first'] },
   },
 };
@@ -36,7 +40,9 @@ class MobileControls {
     this.joystickKnob = this.root.querySelector('.touch-joystick__knob');
     this.joystickVector = { x: 0, y: 0 };
     this.joystickPointerId = null;
-    this.movementMode = 'joystick';
+    this.movementMode = 'buttons';
+    this.movementModes = new Map();
+    this.currentProfile = 'menu';
     this.preventMobileBrowserMenus();
     this.bindButtons();
     this.bindMovementModes();
@@ -132,6 +138,7 @@ class MobileControls {
 
   setProfile(name) {
     const profile = PROFILES[name] ?? PROFILES.menu;
+    this.currentProfile = name;
     this.releaseAll();
     this.root.dataset.profile = name;
     this.root.classList.toggle('supports-joystick', Boolean(profile.joystick));
@@ -147,11 +154,17 @@ class MobileControls {
       }
     });
     if (profile.selected) this.select(profile.selected);
-    if (profile.joystick) this.setMovementMode(this.movementMode);
+    if (profile.joystick) {
+      const mode = this.movementModes.get(name) ?? profile.defaultMovementMode;
+      this.setMovementMode(mode);
+    }
   }
 
   setMovementMode(mode) {
     this.movementMode = mode === 'buttons' ? 'buttons' : 'joystick';
+    if (PROFILES[this.currentProfile]?.joystick) {
+      this.movementModes.set(this.currentProfile, this.movementMode);
+    }
     this.root.dataset.movementMode = this.movementMode;
     this.root.querySelectorAll('[data-movement-mode]').forEach((button) => {
       button.classList.toggle('is-selected', button.dataset.movementMode === this.movementMode);

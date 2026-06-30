@@ -274,6 +274,7 @@ export class TankScene extends Phaser.Scene {
     const enemy = this.enemies.create(x, y, isBonus ? 'retroBonusTank' : 'retroEnemyTank')
       .setDisplaySize(36, 36)
       .setCollideWorldBounds(true)
+      .setPushable(false)
       .setData('turnAt', state.turnAt)
       .setData('shootAt', state.shootAt)
       .setData('isBonus', isBonus);

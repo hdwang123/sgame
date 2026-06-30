@@ -23,6 +23,12 @@ export class MaryJumpGame {
     return this.score;
   }
 
+  collectPowerUp(type) {
+    if (this.finished) return this.score;
+    this.score += type === 'flower' ? MARY_JUMP_RULES.flowerScore : MARY_JUMP_RULES.mushroomScore;
+    return this.score;
+  }
+
   isStomp(playerState, enemyState) {
     const descendingOrNearApex = playerState.velocityY >= -35;
     const clearlyAbove = playerState.y <= enemyState.y - 12;

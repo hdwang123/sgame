@@ -32,6 +32,8 @@ assert.equal(snake.step().gameOver, true);
 const maryJump = new MaryJumpGame();
 assert.equal(maryJump.collectCoin(), 100);
 assert.equal(maryJump.defeatEnemy(), 300);
+assert.equal(maryJump.collectPowerUp('mushroom'), 600);
+assert.equal(maryJump.collectPowerUp('flower'), 1100);
 assert.equal(maryJump.isStomp({ y: 10, velocityY: 200 }, { y: 30 }), true);
 assert.equal(maryJump.isStomp(
   { y: 10, velocityY: 40 },
@@ -47,6 +49,8 @@ MARY_JUMP_LEVELS.forEach((level) => {
   assert.ok(level.goal.x < level.width);
   assert.ok(level.platforms.length > 0);
   assert.ok(level.coins.length > 0);
+  assert.ok(level.powerUps.some(({ type }) => type === 'mushroom'));
+  assert.ok(level.powerUps.some(({ type }) => type === 'flower'));
 });
 
 const tank = new TankGame(() => 0);

@@ -238,10 +238,15 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     gap: 10px;
     justify-content: center;
   }
-  body[data-game-profile="maryJump"] .touch-actions { width: 174px; max-width: 174px; }
+  body[data-game-profile="maryJump"] .touch-actions {
+    --mary-row-indent: 72px;
+    width: 266px;
+    max-width: 266px;
+  }
   body[data-game-profile="tank"] .touch-actions { width: 122px; max-width: 122px; }
   body[data-game-profile="maryJump"] .touch-actions [data-control="primary"],
   body[data-game-profile="tank"] .touch-actions [data-control="primary"] { order: 1; }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="fire"],
   body[data-game-profile="maryJump"] .touch-actions [data-control="tertiary"] { order: 1; }
   body[data-game-profile="maryJump"] .touch-actions [data-control="pause"],
   body[data-game-profile="tank"] .touch-actions [data-control="pause"] { order: 2; }
@@ -257,6 +262,10 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   body[data-game-profile="tank"] .touch-actions [data-control="secondary"] strong { font-size: 17px; }
   body[data-game-profile="maryJump"] .touch-actions [data-control="home"],
   body[data-game-profile="tank"] .touch-actions [data-control="home"] { order: 5; }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="pause"],
+  body[data-game-profile="maryJump"] .touch-actions [data-control="secondary"] { margin-left: var(--mary-row-indent); }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="restart"],
+  body[data-game-profile="maryJump"] .touch-actions [data-control="home"] { margin-right: var(--mary-row-indent); }
   body[data-game-profile="tetris"] #game-container { aspect-ratio: 620 / 680; }
   body[data-game-profile="menu"] #game-container { aspect-ratio: 620 / 760; }
   body[data-game-profile="tetris"] .brand,
@@ -359,8 +368,9 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     gap: 8px;
   }
   body[data-game-profile="maryJump"] .touch-actions {
-    width: calc(var(--action-size) * 2 + 8px);
-    max-width: calc(var(--action-size) * 2 + 8px);
+    --mary-row-indent: calc((var(--action-size) * 3 + 16px - var(--small-action-size) * 2 - 8px) / 2);
+    width: calc(var(--action-size) * 3 + 16px);
+    max-width: calc(var(--action-size) * 3 + 16px);
     gap: 8px;
   }
   body[data-game-profile="maryJump"] .touch-actions [data-control="secondary"],

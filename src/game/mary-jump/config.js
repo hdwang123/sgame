@@ -5,6 +5,10 @@ export const MARY_JUMP_RULES = {
   stompBounce: 330,
   coinScore: 100,
   enemyScore: 200,
+  mushroomScore: 300,
+  flowerScore: 500,
+  fireballSpeed: 460,
+  fireCooldown: 320,
   levelBonus: 500,
 };
 
@@ -33,6 +37,7 @@ function createMaryJumpLevel({ name, subtitle, width, gravity, enemySpeed, varia
   }
 
   const coins = [];
+  const powerUps = [];
   const platformCount = 9 + (variant % 3);
   for (let index = 0; index < platformCount; index += 1) {
     const x = 330 + index * ((width - 660) / Math.max(1, platformCount - 1));
@@ -41,6 +46,8 @@ function createMaryJumpLevel({ name, subtitle, width, gravity, enemySpeed, varia
     const platformWidth = 150 + ((index + variant) % 3) * 20;
     platforms.push([x, y, platformWidth, 24]);
     coins.push([x, y - 45]);
+    if (index === 1) powerUps.push({ type: 'mushroom', x: x + platformWidth * 0.28, y: y - 38 });
+    if (index === Math.min(5, platformCount - 2)) powerUps.push({ type: 'flower', x: x - platformWidth * 0.28, y: y - 40 });
   }
 
   return {
@@ -54,6 +61,7 @@ function createMaryJumpLevel({ name, subtitle, width, gravity, enemySpeed, varia
     goal: { x: width - 100, y: 550 },
     platforms,
     coins,
+    powerUps,
     enemies,
     hazards,
   };

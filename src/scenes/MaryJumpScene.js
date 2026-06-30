@@ -27,6 +27,10 @@ export class MaryJumpScene extends Phaser.Scene {
     this.levelIndex = Phaser.Math.Clamp(data.levelIndex ?? 0, 0, MARY_JUMP_LEVELS.length - 1);
     this.level = MARY_JUMP_LEVELS[this.levelIndex];
     this.levelStartScore = data.score ?? 0;
+    this.levelStartPower = data.power ?? 'small';
+    this.playerPower = this.levelStartPower;
+    this.playerInvincibleUntil = 0;
+    this.lastFireAt = Number.NEGATIVE_INFINITY;
     this.phase = 'playing';
     this.jumpQueuedUntil = 0;
     this.queuedJumpSpeed = MARY_JUMP_RULES.jumpSpeed;
@@ -52,6 +56,7 @@ export class MaryJumpScene extends Phaser.Scene {
       .setCollideWorldBounds(true)
       .setBounce(0.05);
     this.player.body.setSize(44, 82).setOffset(12, 8);
+    this.applyPlayerPower(this.playerPower);
     this.physics.add.collider(this.player, this.platforms);
 
     this.coins = this.physics.add.staticGroup();
@@ -62,6 +67,13 @@ export class MaryJumpScene extends Phaser.Scene {
       soundFX.play('coin');
       this.updateHud();
     });
+
+    this.powerUps = this.physics.add.staticGroup();
+    this.level.powerUps.forEach(({ type, x, y }) => {
+      this.powerUps.create(x, y, type === 'flower' ? 'maryFlower' : 'maryMushroom')
+        .setData('type', type);
+    });
+    this.physics.add.overlap(this.player, this.powerUps, (_, powerUp) => this.collectPowerUp(powerUp));
 
     this.enemies = this.physics.add.group({ allowGravity: true });
     this.level.enemies.forEach((config, index) => {
@@ -77,17 +89,23 @@ export class MaryJumpScene extends Phaser.Scene {
     this.physics.add.collider(this.enemies, this.platforms);
     this.physics.add.overlap(this.player, this.enemies, (player, enemy) => this.hitEnemy(player, enemy));
 
+    this.fireballs = this.physics.add.group({ allowGravity: false, maxSize: 8 });
+    this.physics.add.collider(this.fireballs, this.platforms, (fireball) => fireball.destroy());
+    this.physics.add.overlap(this.fireballs, this.enemies, (fireball, enemy) => this.hitEnemyWithFireball(fireball, enemy));
+
     this.goal = this.physics.add.staticSprite(this.level.goal.x, this.level.goal.y, 'flag');
     this.physics.add.overlap(this.player, this.goal, () => this.completeLevel());
 
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.keys = this.input.keyboard.addKeys('A,D,W,SPACE,X,SHIFT');
+    this.keys = this.input.keyboard.addKeys('A,D,W,SPACE,X,SHIFT,F');
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('menu'));
     this.input.keyboard.on('keydown-ENTER', () => this.handleContinue());
     this.input.keyboard.on('keydown-P', () => this.togglePause());
     this.input.keyboard.on('keydown-R', () => this.restartFromFirstLevel());
+    this.input.keyboard.on('keydown-F', () => this.shootFireball());
     mobileControls.bindScene(this, 'maryJump', {
       primary: () => this.queueJump(),
+      fire: () => this.shootFireball(),
       tertiary: () => this.queueJump(true),
       secondary: () => this.restartFromFirstLevel(),
       pause: () => this.togglePause(),
@@ -120,15 +138,40 @@ export class MaryJumpScene extends Phaser.Scene {
   }
 
   makeTextures() {
-    if (this.textures.exists('coin')) return;
     const g = this.make.graphics({ add: false });
-    g.fillStyle(0xffd43b).fillCircle(10, 10, 9)
-      .lineStyle(2, 0xfff3bf).strokeCircle(10, 10, 7)
-      .generateTexture('coin', 20, 20);
-    g.clear();
-    g.fillStyle(0xe9ecef).fillRect(8, 0, 5, 90)
-      .fillStyle(0x51cf66).fillTriangle(13, 4, 13, 36, 48, 20)
-      .generateTexture('flag', 52, 90);
+    if (!this.textures.exists('coin')) {
+      g.fillStyle(0xffd43b).fillCircle(10, 10, 9)
+        .lineStyle(2, 0xfff3bf).strokeCircle(10, 10, 7)
+        .generateTexture('coin', 20, 20);
+      g.clear();
+    }
+    if (!this.textures.exists('flag')) {
+      g.fillStyle(0xe9ecef).fillRect(8, 0, 5, 90)
+        .fillStyle(0x51cf66).fillTriangle(13, 4, 13, 36, 48, 20)
+        .generateTexture('flag', 52, 90);
+      g.clear();
+    }
+    if (!this.textures.exists('maryMushroom')) {
+      g.fillStyle(0xf03e3e).fillEllipse(16, 10, 30, 19)
+        .fillStyle(0xffffff).fillCircle(10, 7, 4).fillCircle(22, 8, 4)
+        .fillStyle(0xffe8cc).fillRoundedRect(10, 12, 12, 15, 4)
+        .lineStyle(2, 0x7f1d1d).strokeEllipse(16, 10, 30, 19)
+        .generateTexture('maryMushroom', 32, 28);
+      g.clear();
+    }
+    if (!this.textures.exists('maryFlower')) {
+      g.fillStyle(0x51cf66).fillRect(13, 16, 5, 16)
+        .fillStyle(0xffd43b).fillCircle(15, 12, 7)
+        .fillStyle(0xff6b6b).fillCircle(15, 4, 6).fillCircle(7, 11, 6).fillCircle(23, 11, 6)
+        .fillStyle(0xffffff).fillCircle(15, 11, 4)
+        .generateTexture('maryFlower', 30, 32);
+      g.clear();
+    }
+    if (!this.textures.exists('maryFireball')) {
+      g.fillStyle(0xffd43b).fillCircle(8, 6, 6)
+        .lineStyle(2, 0xff6b35).strokeCircle(8, 6, 5)
+        .generateTexture('maryFireball', 16, 12);
+    }
     g.destroy();
   }
 
@@ -186,6 +229,12 @@ export class MaryJumpScene extends Phaser.Scene {
       enemy.setData('direction', direction).setVelocityX(direction * this.level.enemySpeed);
     });
 
+    this.fireballs.children.iterate((fireball) => {
+      if (!fireball?.active) return;
+      if (this.time.now - fireball.getData('bornAt') > 1800
+        || fireball.x < 0 || fireball.x > this.level.width) fireball.destroy();
+    });
+
     if (this.player.y > this.level.height + 40) this.lose('mary.missed');
   }
 
@@ -209,6 +258,68 @@ export class MaryJumpScene extends Phaser.Scene {
     }
   }
 
+  collectPowerUp(powerUp) {
+    if (!powerUp?.active || this.phase !== 'playing') return;
+    const type = powerUp.getData('type');
+    powerUp.destroy();
+    this.model.collectPowerUp(type);
+    if (type === 'flower') this.applyPlayerPower('fire');
+    else if (this.playerPower === 'small') this.applyPlayerPower('big');
+    soundFX.play('coin');
+    this.showPowerNotice(type === 'flower' ? 'mary.firePower' : 'mary.big');
+    this.updateHud();
+  }
+
+  applyPlayerPower(power) {
+    this.playerPower = power;
+    if (!this.player) return;
+    const powered = power !== 'small';
+    this.player.setDisplaySize(powered ? 52 : 42, powered ? 70 : 57);
+    if (power === 'fire') this.player.setTint(0xffd8a8);
+    else this.player.clearTint();
+    this.updateHud();
+  }
+
+  showPowerNotice(messageKey) {
+    this.powerNotice?.destroy();
+    this.powerNotice = this.add.text(430, 92, t(messageKey), {
+      fontFamily: 'Arial Black', fontSize: '15px', color: '#fff3bf',
+      backgroundColor: '#080b14dd', padding: { x: 14, y: 8 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(18);
+    const notice = this.powerNotice;
+    this.tweens.add({
+      targets: notice, alpha: 0, y: 76, delay: 900, duration: 350,
+      onComplete: () => {
+        notice.destroy();
+        if (this.powerNotice === notice) this.powerNotice = null;
+      },
+    });
+  }
+
+  shootFireball() {
+    if (this.phase !== 'playing' || this.playerPower !== 'fire') return;
+    if (this.time.now < this.lastFireAt + MARY_JUMP_RULES.fireCooldown) return;
+    this.lastFireAt = this.time.now;
+    const direction = this.player.flipX ? -1 : 1;
+    const x = this.player.x + direction * 28;
+    const fireball = this.fireballs.get(x, this.player.y - 4, 'maryFireball');
+    if (!fireball) return;
+    fireball.setActive(true).setVisible(true).setDepth(8).setData('bornAt', this.time.now);
+    fireball.body.enable = true;
+    fireball.body.reset(x, this.player.y - 4);
+    fireball.setVelocity(direction * MARY_JUMP_RULES.fireballSpeed, 0);
+    soundFX.play('shoot');
+  }
+
+  hitEnemyWithFireball(fireball, enemy) {
+    if (this.phase !== 'playing' || !fireball.active || !enemy.active) return;
+    fireball.destroy();
+    enemy.destroy();
+    this.model.defeatEnemy();
+    soundFX.play('stomp');
+    this.updateHud();
+  }
+
   hitEnemy(player, enemy) {
     if (this.phase !== 'playing' || !enemy.active) return;
     const stomped = this.model.isStomp({
@@ -224,7 +335,14 @@ export class MaryJumpScene extends Phaser.Scene {
       soundFX.play('stomp');
       this.updateHud();
     } else {
-      this.lose('mary.hit');
+      if (this.time.now < this.playerInvincibleUntil) return;
+      if (this.playerPower !== 'small') {
+        this.applyPlayerPower('small');
+        this.playerInvincibleUntil = this.time.now + 1200;
+        soundFX.play('hurt');
+        this.player.setAlpha(0.45);
+        this.time.delayedCall(1200, () => this.player?.active && this.player.setAlpha(1));
+      } else this.lose('mary.hit');
     }
   }
 
@@ -253,7 +371,7 @@ export class MaryJumpScene extends Phaser.Scene {
       this.message.setText(`${t('mary.stageClear', { stage: this.levelIndex + 1 })}\n${t('mary.next', { bonus })}`).setVisible(true);
       this.time.delayedCall(1200, () => {
         if (this.phase === 'stage-clear') {
-          this.scene.restart({ levelIndex: this.levelIndex + 1, score: this.model.score });
+          this.scene.restart({ levelIndex: this.levelIndex + 1, score: this.model.score, power: this.playerPower });
         }
       });
     }
@@ -261,7 +379,7 @@ export class MaryJumpScene extends Phaser.Scene {
 
   handleContinue() {
     if (this.phase === 'stage-clear') {
-      this.scene.restart({ levelIndex: this.levelIndex + 1, score: this.model.score });
+      this.scene.restart({ levelIndex: this.levelIndex + 1, score: this.model.score, power: this.playerPower });
     } else if (this.phase === 'lost') {
       this.restartLevel();
     } else if (this.phase === 'complete') {
@@ -270,7 +388,7 @@ export class MaryJumpScene extends Phaser.Scene {
   }
 
   restartLevel() {
-    this.scene.restart({ levelIndex: this.levelIndex, score: this.levelStartScore });
+    this.scene.restart({ levelIndex: this.levelIndex, score: this.levelStartScore, power: this.levelStartPower });
   }
 
   togglePause() {
@@ -293,7 +411,10 @@ export class MaryJumpScene extends Phaser.Scene {
   updateHud() {
     const levelName = getLanguage() === 'zh' ? this.level.name : this.level.subtitle;
     this.levelText?.setText(`${t('global.stage')} ${this.levelIndex + 1}/${MARY_JUMP_LEVELS.length}  ·  ${levelName}`);
-    this.scoreText?.setText(`${t('mary.score')}  ${String(this.model.score).padStart(4, '0')}`);
+    const power = this.playerPower === 'fire'
+      ? `  ·  ${t('mary.powerFire')}`
+      : this.playerPower === 'big' ? `  ·  ${t('mary.powerBig')}` : '';
+    this.scoreText?.setText(`${t('mary.score')}  ${String(this.model.score).padStart(4, '0')}${power}`);
   }
 
   showStageIntro() {
