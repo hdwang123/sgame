@@ -30,6 +30,7 @@ export function showSceneLoader(scene, accent = 0x748ffc) {
   const cleanup = () => {
     scene.load.off('progress', update);
     scene.load.off('loaderror', showError);
+    scene.events.off('shutdown', cleanup);
     if (failed) return;
     [backdrop, title, track, bar].forEach((object) => object.destroy());
   };

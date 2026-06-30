@@ -16,14 +16,25 @@ export class MaryJumpScene extends Phaser.Scene {
   }
 
   preload() {
-    showSceneLoader(this, 0xff922b);
     const assets = `${import.meta.env.BASE_URL}assets/mary-jump/`;
-    this.load.image('mary-jump-bg', `${assets}sunset-ruins.jpg`);
-    this.load.image('hero', `${assets}hero.png`);
-    this.load.image('enemy', `${assets}slime.png`);
+    const images = [
+      ['mary-jump-bg', `${assets}sunset-ruins.jpg`],
+      ['hero', `${assets}hero.png`],
+      ['enemy', `${assets}slime.png`],
+    ];
+    const missingImages = images.filter(([key]) => !this.textures.exists(key));
+    if (missingImages.length === 0) return;
+    showSceneLoader(this, 0xff922b);
+    missingImages.forEach(([key, url]) => this.load.image(key, url));
   }
 
   create(data = {}) {
+    // Scene instances are reused after restart. These objects were destroyed
+    // during shutdown, but their properties still point at the old canvases.
+    this.levelText = null;
+    this.scoreText = null;
+    this.message = null;
+    this.powerNotice = null;
     this.levelIndex = Phaser.Math.Clamp(data.levelIndex ?? 0, 0, MARY_JUMP_LEVELS.length - 1);
     this.level = MARY_JUMP_LEVELS[this.levelIndex];
     this.levelStartScore = data.score ?? 0;
@@ -31,9 +42,15 @@ export class MaryJumpScene extends Phaser.Scene {
     this.playerPower = this.levelStartPower;
     this.playerInvincibleUntil = 0;
     this.lastFireAt = Number.NEGATIVE_INFINITY;
+    this.restartRequested = false;
     this.phase = 'playing';
     this.jumpQueuedUntil = 0;
     this.queuedJumpSpeed = MARY_JUMP_RULES.jumpSpeed;
+    this.lastMobileJumpPressAt = Number.NEGATIVE_INFINITY;
+    this.mobileBigJumpArmed = false;
+    this.mobileBigJumpAt = Number.POSITIVE_INFINITY;
+    this.pendingPlayerPower = null;
+    this.powerResizeScheduled = false;
     this.lastGroundedAt = Number.NEGATIVE_INFINITY;
     this.model = new MaryJumpGame();
     this.model.score = this.levelStartScore;
@@ -44,6 +61,8 @@ export class MaryJumpScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, this.level.width, this.level.height);
     this.physics.world.checkCollision.down = false;
     this.cameras.main
+      .stopFollow()
+      .setScroll(0, 0)
       .setBounds(0, 0, this.level.width, this.level.height)
       .setBackgroundColor('#10182d');
     this.drawWorld();
@@ -103,10 +122,21 @@ export class MaryJumpScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-P', () => this.togglePause());
     this.input.keyboard.on('keydown-R', () => this.restartFromFirstLevel());
     this.input.keyboard.on('keydown-F', () => this.shootFireball());
+    this.nativeRestartHandler = (event) => {
+      if (this.phase !== 'lost' || event.repeat) return;
+      event.preventDefault();
+      this.restartLevel();
+    };
+    globalThis.addEventListener('keydown', this.nativeRestartHandler, true);
+    this.events.once('shutdown', () => {
+      globalThis.removeEventListener('keydown', this.nativeRestartHandler, true);
+    });
+    this.input.on('pointerdown', () => {
+      if (this.phase === 'lost') this.restartLevel();
+    });
     mobileControls.bindScene(this, 'maryJump', {
-      primary: () => this.queueJump(),
+      primary: () => this.handleMobileJumpPress(),
       fire: () => this.shootFireball(),
-      tertiary: () => this.queueJump(true),
       secondary: () => this.restartFromFirstLevel(),
       pause: () => this.togglePause(),
       restart: () => this.restartLevel(),
@@ -220,6 +250,18 @@ export class MaryJumpScene extends Phaser.Scene {
     if (bigJump) this.queueJump(true);
     else if (jump) this.queueJump();
     this.consumeQueuedJump();
+    if (this.mobileBigJumpArmed && !mobileControls.isDown('primary')) {
+      this.mobileBigJumpArmed = false;
+      this.mobileBigJumpAt = Number.POSITIVE_INFINITY;
+    }
+    if (this.mobileBigJumpArmed
+      && mobileControls.isDown('primary')
+      && this.time.now >= this.mobileBigJumpAt
+      && this.player.body.velocity.y < 0) {
+      this.player.setVelocityY(-MARY_JUMP_RULES.bigJumpSpeed);
+      this.mobileBigJumpArmed = false;
+      this.mobileBigJumpAt = Number.POSITIVE_INFINITY;
+    }
 
     this.enemies.children.iterate((enemy) => {
       if (!enemy?.active) return;
@@ -246,6 +288,21 @@ export class MaryJumpScene extends Phaser.Scene {
     this.consumeQueuedJump();
   }
 
+  handleMobileJumpPress() {
+    if (this.phase !== 'playing') return;
+    const now = this.time.now;
+    const doublePress = now - this.lastMobileJumpPressAt <= 300;
+    this.lastMobileJumpPressAt = now;
+    if (doublePress) {
+      this.mobileBigJumpArmed = true;
+      this.mobileBigJumpAt = now + 100;
+      return;
+    }
+    this.mobileBigJumpArmed = false;
+    this.mobileBigJumpAt = Number.POSITIVE_INFINITY;
+    this.queueJump();
+  }
+
   consumeQueuedJump() {
     const canUseCoyoteTime = this.time.now - this.lastGroundedAt <= 110;
     const grounded = this.player?.body?.blocked.down;
@@ -263,18 +320,54 @@ export class MaryJumpScene extends Phaser.Scene {
     const type = powerUp.getData('type');
     powerUp.destroy();
     this.model.collectPowerUp(type);
-    if (type === 'flower') this.applyPlayerPower('fire');
-    else if (this.playerPower === 'small') this.applyPlayerPower('big');
+    if (type === 'flower') this.applyPlayerPowerAfterPhysics('fire');
+    else if (this.playerPower === 'small') this.applyPlayerPowerAfterPhysics('big');
     soundFX.play('coin');
     this.showPowerNotice(type === 'flower' ? 'mary.firePower' : 'mary.big');
     this.updateHud();
+  }
+
+  applyPlayerPowerAfterPhysics(power) {
+    this.playerPower = power;
+    this.pendingPlayerPower = power;
+    this.updateHud();
+    if (this.powerResizeScheduled) return;
+    this.powerResizeScheduled = true;
+    this.events.once('postupdate', () => {
+      this.powerResizeScheduled = false;
+      const pendingPower = this.pendingPlayerPower;
+      this.pendingPlayerPower = null;
+      if (pendingPower && this.player?.active && this.phase === 'playing') {
+        this.applyPlayerPower(pendingPower);
+      }
+    });
   }
 
   applyPlayerPower(power) {
     this.playerPower = power;
     if (!this.player) return;
     const powered = power !== 'small';
-    this.player.setDisplaySize(powered ? 52 : 42, powered ? 70 : 57);
+    const wasGrounded = this.player.body?.blocked.down;
+    const previousBodyBottom = this.player.body?.bottom;
+    const displayWidth = powered ? 52 : 42;
+    const displayHeight = powered ? 70 : 57;
+    this.player.setDisplaySize(displayWidth, displayHeight);
+
+    // Keep a predictable, narrow world-space hitbox after changing sprite
+    // scale. Preserving the feet position prevents growth from embedding the
+    // body in a platform and getting it stuck at an edge.
+    const bodyWidth = powered ? 30 : 28;
+    const bodyHeight = powered ? 60 : 50;
+    this.player.body.setSize(
+      bodyWidth / Math.abs(this.player.scaleX),
+      bodyHeight / Math.abs(this.player.scaleY),
+      true,
+    );
+    this.player.body.updateFromGameObject();
+    if (wasGrounded && Number.isFinite(previousBodyBottom)) {
+      this.player.y += previousBodyBottom - this.player.body.bottom;
+      this.player.body.updateFromGameObject();
+    }
     if (power === 'fire') this.player.setTint(0xffd8a8);
     else this.player.clearTint();
     this.updateHud();
@@ -337,11 +430,11 @@ export class MaryJumpScene extends Phaser.Scene {
     } else {
       if (this.time.now < this.playerInvincibleUntil) return;
       if (this.playerPower !== 'small') {
-        this.applyPlayerPower('small');
-        this.playerInvincibleUntil = this.time.now + 1200;
+        this.playerInvincibleUntil = this.time.now + 3000;
+        this.applyPlayerPowerAfterPhysics('small');
         soundFX.play('hurt');
         this.player.setAlpha(0.45);
-        this.time.delayedCall(1200, () => this.player?.active && this.player.setAlpha(1));
+        this.time.delayedCall(3000, () => this.player?.active && this.player.setAlpha(1));
       } else this.lose('mary.hit');
     }
   }
@@ -388,7 +481,14 @@ export class MaryJumpScene extends Phaser.Scene {
   }
 
   restartLevel() {
-    this.scene.restart({ levelIndex: this.levelIndex, score: this.levelStartScore, power: this.levelStartPower });
+    if (this.restartRequested) return;
+    this.restartRequested = true;
+    mobileControls.releaseAll();
+    this.scene.restart({
+      levelIndex: this.levelIndex,
+      score: this.levelStartScore,
+      power: this.levelStartPower,
+    });
   }
 
   togglePause() {
@@ -404,17 +504,23 @@ export class MaryJumpScene extends Phaser.Scene {
   }
 
   restartFromFirstLevel() {
-    if (this.levelIndex === 0 && this.phase === 'playing') return;
-    this.scene.restart({ levelIndex: 0, score: 0 });
+    if (this.restartRequested) return;
+    this.restartRequested = true;
+    mobileControls.releaseAll();
+    this.scene.restart({ levelIndex: 0, score: 0, power: 'small' });
   }
 
   updateHud() {
     const levelName = getLanguage() === 'zh' ? this.level.name : this.level.subtitle;
-    this.levelText?.setText(`${t('global.stage')} ${this.levelIndex + 1}/${MARY_JUMP_LEVELS.length}  ·  ${levelName}`);
+    if (this.levelText?.scene === this) {
+      this.levelText.setText(`${t('global.stage')} ${this.levelIndex + 1}/${MARY_JUMP_LEVELS.length}  ·  ${levelName}`);
+    }
     const power = this.playerPower === 'fire'
       ? `  ·  ${t('mary.powerFire')}`
       : this.playerPower === 'big' ? `  ·  ${t('mary.powerBig')}` : '';
-    this.scoreText?.setText(`${t('mary.score')}  ${String(this.model.score).padStart(4, '0')}${power}`);
+    if (this.scoreText?.scene === this) {
+      this.scoreText.setText(`${t('mary.score')}  ${String(this.model.score).padStart(4, '0')}${power}`);
+    }
   }
 
   showStageIntro() {

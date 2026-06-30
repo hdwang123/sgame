@@ -63,6 +63,7 @@ export class TankScene extends Phaser.Scene {
     this.playerInvincibleUntil = 0;
     this.enemiesFrozenUntil = 0;
     this.baseProtectionExpiresAt = 0;
+    this.playerTankContact = null;
     this.activatePlayerShield(this.player);
     this.bullets = this.physics.add.group({ maxSize: 40 });
     this.enemyBullets = this.physics.add.group({ maxSize: 50 });
@@ -79,7 +80,11 @@ export class TankScene extends Phaser.Scene {
       enemyA.setData('turnAt', 0);
       enemyB.setData('turnAt', 0);
     });
-    this.physics.add.collider(this.player, this.enemies);
+    this.physics.add.overlap(this.player, this.enemies, (player, enemy) => {
+      player.setVelocity(0);
+      enemy.setVelocity(0).setData('turnAt', this.time.now + 180);
+      this.playerTankContact = { enemy, at: this.time.now };
+    });
     this.physics.add.collider(this.player, this.base);
     this.physics.add.collider(this.enemies, this.base, (enemy) => enemy.setData('turnAt', 0));
     this.physics.add.collider(this.player, this.baseSteelWalls);
@@ -274,7 +279,6 @@ export class TankScene extends Phaser.Scene {
     const enemy = this.enemies.create(x, y, isBonus ? 'retroBonusTank' : 'retroEnemyTank')
       .setDisplaySize(36, 36)
       .setCollideWorldBounds(true)
-      .setPushable(false)
       .setData('turnAt', state.turnAt)
       .setData('shootAt', state.shootAt)
       .setData('isBonus', isBonus);
@@ -330,6 +334,14 @@ export class TankScene extends Phaser.Scene {
       this.player.setVelocity(0, analogSpeed).setAngle(180); moving = true;
     }
     if (!moving) this.player.setVelocity(0);
+    const contact = this.playerTankContact;
+    if (moving && contact?.enemy?.active && time - contact.at < 80) {
+      const towardX = contact.enemy.x - this.player.x;
+      const towardY = contact.enemy.y - this.player.y;
+      const movingTowardTank = towardX * this.player.body.velocity.x
+        + towardY * this.player.body.velocity.y > 0;
+      if (movingTowardTank) this.player.setVelocity(0);
+    }
     if ((this.keys.SPACE.isDown || mobileControls.isDown('primary')) && this.model.canPlayerShoot(time)) {
       soundFX.play('shoot');
       this.shoot(this.player, this.bullets, TANK_RULES.playerBulletSpeed);

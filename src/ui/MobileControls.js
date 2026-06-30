@@ -17,10 +17,10 @@ const PROFILES = {
     selected: 'speed-normal',
   },
   maryJump: {
-    controls: ['left', 'right', 'primary', 'fire', 'tertiary', 'secondary', 'pause', 'restart', 'home'],
+    controls: ['left', 'right', 'primary', 'fire', 'secondary', 'pause', 'restart', 'home'],
     joystick: true,
     defaultMovementMode: 'joystick',
-    labels: { primary: ['▲', 'touch.jump'], fire: ['●', 'touch.fire'], tertiary: ['⇈', 'touch.bigJump'], secondary: ['1', 'touch.first'] },
+    labels: { primary: ['▲', 'touch.jump'], fire: ['●', 'touch.fire'], secondary: ['1', 'touch.first'] },
   },
   tank: {
     controls: ['up', 'left', 'down', 'right', 'primary', 'secondary', 'pause', 'restart', 'home'],
@@ -74,8 +74,11 @@ class MobileControls {
       this.buttons.set(control, button);
       const release = (event) => {
         event?.preventDefault();
-        this.pressed.delete(control);
+        const wasPressed = this.pressed.delete(control);
         button.classList.remove('is-pressed');
+        if (event?.type === 'pointerup' && wasPressed && this.shouldEmitOnRelease(control)) {
+          this.emit(control);
+        }
       };
       button.addEventListener('pointerdown', (event) => {
         event.preventDefault();
@@ -83,13 +86,17 @@ class MobileControls {
         this.pressed.add(control);
         button.classList.add('is-pressed');
         globalThis.navigator?.vibrate?.(8);
-        this.emit(control);
+        if (!this.shouldEmitOnRelease(control)) this.emit(control);
       });
       button.addEventListener('pointerup', release);
       button.addEventListener('pointercancel', release);
       button.addEventListener('lostpointercapture', release);
     });
     globalThis.addEventListener('blur', () => this.releaseAll());
+  }
+
+  shouldEmitOnRelease(control) {
+    return control === 'pause' || control === 'home';
   }
 
   bindMovementModes() {
