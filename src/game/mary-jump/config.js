@@ -1,6 +1,7 @@
 export const MARY_JUMP_RULES = {
   moveSpeed: 230,
   jumpSpeed: 520,
+  bigJumpSpeed: 720,
   stompBounce: 330,
   coinScore: 100,
   enemyScore: 200,

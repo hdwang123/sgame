@@ -3,14 +3,14 @@ import { TankGame } from '../game/tank/TankGame.js';
 import { TANK_ARENA, TANK_LEVELS, TANK_RULES } from '../game/tank/config.js';
 import { soundFX } from '../audio/SoundFX.js';
 import { mobileControls } from '../ui/MobileControls.js';
-import { showSceneLoader } from '../ui/SceneLoader.js';
+import { getLanguage, t } from '../i18n.js';
 
 const POWER_UPS = [
-  { key: 'freeze', label: '停', color: 0x74c0fc, name: '敌军冻结 30 秒' },
-  { key: 'bomb', label: '爆', color: 0xff922b, name: '全屏歼灭' },
-  { key: 'shield', label: '盾', color: 0xb197fc, name: '无敌 30 秒' },
-  { key: 'life', label: '命', color: 0x69db7c, name: '生命 +1' },
-  { key: 'fortify', label: '墙', color: 0xe9ecef, name: '基地钢墙 30 秒' },
+  { key: 'freeze', labels: ['停', 'F'], color: 0x74c0fc, nameKey: 'tank.freeze' },
+  { key: 'bomb', labels: ['爆', 'B'], color: 0xff922b, nameKey: 'tank.bomb' },
+  { key: 'shield', labels: ['盾', 'S'], color: 0xb197fc, nameKey: 'tank.shield' },
+  { key: 'life', labels: ['命', '+'], color: 0x69db7c, nameKey: 'tank.extraLife' },
+  { key: 'fortify', labels: ['墙', 'W'], color: 0xe9ecef, nameKey: 'tank.fortify' },
 ];
 
 const POWER_DURATION = 30000;
@@ -21,12 +21,6 @@ export class TankScene extends Phaser.Scene {
   }
 
   preload() {
-    showSceneLoader(this, 0x38d9a9);
-    const assets = `${import.meta.env.BASE_URL}assets/tank/`;
-    this.load.image('tank-bg', `${assets}battlefield.jpg`);
-    this.load.image('playerTank', `${assets}player-tank-cartoon.png`);
-    this.load.image('enemyTank', `${assets}enemy-tank-cartoon.png`);
-    this.load.image('baseCastle', `${assets}base-castle-cartoon.png`);
   }
 
   create(data = {}) {
@@ -51,15 +45,15 @@ export class TankScene extends Phaser.Scene {
     this.level.walls.forEach((wall) => this.addWall(...wall));
     this.breakableWalls = this.physics.add.staticGroup();
     this.level.breakableWalls.forEach((wall) => this.addBreakableWall(...wall));
-    this.base = this.physics.add.staticSprite(...this.level.base, 'baseCastle')
-      .setDisplaySize(64, 64)
+    this.base = this.physics.add.staticSprite(...this.level.base, 'retroBase')
+      .setDisplaySize(46, 46)
       .refreshBody();
-    this.player = this.physics.add.sprite(...this.playerSpawn, 'playerTank')
-      .setDisplaySize(48, 52)
+    this.player = this.physics.add.sprite(...this.playerSpawn, 'retroPlayerTank')
+      .setDisplaySize(36, 36)
       .setCollideWorldBounds(true)
       .setData('lastHit', this.time.now)
       .setData('recovering', false);
-    this.player.body.setSize(200, 200).setOffset(28, 28);
+    this.player.body.setSize(28, 28).setOffset(2, 2);
     this.playerShield = null;
     this.shieldExpiresAt = 0;
     this.playerInvincibleUntil = 0;
@@ -104,10 +98,10 @@ export class TankScene extends Phaser.Scene {
     // For Group vs Sprite checks Phaser passes the Sprite first, then the Group child.
     this.physics.add.overlap(this.enemyBullets, this.player, (player, bullet) => this.hitPlayer(player, bullet));
     this.physics.add.overlap(this.enemyBullets, this.base, (_, bullet) => {
-      this.hitBase(bullet, '基地失守 / BASE LOST');
+      this.hitBase(bullet, 'tank.baseLost');
     });
     this.physics.add.overlap(this.bullets, this.base, (_, bullet) => {
-      this.hitBase(bullet, '误伤基地 / FRIENDLY FIRE');
+      this.hitBase(bullet, 'tank.friendlyFire');
     });
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -123,10 +117,10 @@ export class TankScene extends Phaser.Scene {
       home: () => this.scene.start('menu'),
     });
 
-    this.add.text(30, 12, '坦克大战', {
+    this.add.text(30, 12, t('game.tank'), {
       fontFamily: 'Arial Black', fontSize: '25px', color: '#63e6be',
     });
-    this.add.text(32, 42, 'TANK STRIKE', {
+    this.add.text(32, 42, t('game.tank.sub'), {
       fontFamily: 'Arial', fontSize: '9px', color: '#698c84', letterSpacing: 2,
     });
     this.levelText = this.add.text(430, 18, '', {
@@ -138,7 +132,7 @@ export class TankScene extends Phaser.Scene {
     this.powerStatusText = this.add.text(830, 43, '', {
       fontFamily: 'Consolas', fontSize: '11px', color: '#ffe8a3',
     }).setOrigin(1, 0).setDepth(10);
-    this.add.text(30, 655, 'WASD / 方向键移动  ·  SPACE 射击  ·  P 暂停  ·  R 从第1关开始  ·  ESC 返回游戏厅', {
+    this.add.text(30, 655, t('tank.controls'), {
       fontFamily: 'Arial', fontSize: '11px', color: '#66728b',
     });
     this.message = this.add.text(430, 340, '', {
@@ -151,88 +145,135 @@ export class TankScene extends Phaser.Scene {
 
   makeTextures() {
     const g = this.make.graphics({ add: false });
+    if (!this.textures.exists('retroPlayerTank')) {
+      this.drawPixelTank(g, 0xffd43b, 0xff922b).generateTexture('retroPlayerTank', 32, 32);
+      g.clear();
+    }
+    if (!this.textures.exists('retroEnemyTank')) {
+      this.drawPixelTank(g, 0xe9ecef, 0x868e96).generateTexture('retroEnemyTank', 32, 32);
+      g.clear();
+    }
+    if (!this.textures.exists('retroBonusTank')) {
+      this.drawPixelTank(g, 0xff4d4f, 0xffd43b).generateTexture('retroBonusTank', 32, 32);
+      g.clear();
+    }
+    if (!this.textures.exists('retroBase')) {
+      g.fillStyle(0x343a40).fillRect(2, 2, 28, 28)
+        .fillStyle(0xced4da).fillRect(5, 5, 22, 22)
+        .fillStyle(0x212529).fillRect(9, 8, 14, 16)
+        .fillStyle(0xffd43b).fillTriangle(16, 7, 8, 22, 24, 22)
+        .fillStyle(0x5c3d1e).fillRect(13, 14, 6, 13)
+        .generateTexture('retroBase', 32, 32);
+      g.clear();
+    }
     if (!this.textures.exists('bullet')) {
-      g.fillStyle(0xfff3bf).fillCircle(4, 4, 4).generateTexture('bullet', 8, 8);
+      g.fillStyle(0xffffff).fillRect(1, 1, 6, 6)
+        .fillStyle(0xffd43b).fillRect(2, 0, 4, 8)
+        .generateTexture('bullet', 8, 8);
       g.clear();
     }
     if (!this.textures.exists('baseDestroyed')) {
-      g.fillStyle(0x20252a).fillRect(7, 43, 50, 14)
-        .fillStyle(0x343a40).fillTriangle(5, 48, 19, 27, 31, 49)
-        .fillTriangle(24, 49, 39, 20, 48, 49)
-        .fillTriangle(39, 49, 53, 31, 60, 49)
-        .fillStyle(0xff6b35).fillTriangle(26, 45, 34, 29, 38, 46)
-        .fillStyle(0xffd43b).fillTriangle(30, 45, 34, 35, 36, 45)
-        .lineStyle(3, 0x111418, 0.9).lineBetween(15, 35, 24, 46)
-        .lineBetween(45, 28, 38, 43)
-        .generateTexture('baseDestroyed', 64, 64);
+      g.fillStyle(0x343a40).fillRect(2, 21, 28, 9)
+        .fillStyle(0x868e96).fillRect(5, 16, 7, 8)
+        .fillRect(20, 18, 8, 7)
+        .fillStyle(0xff6b35).fillTriangle(11, 24, 16, 8, 21, 24)
+        .fillStyle(0xffd43b).fillTriangle(14, 23, 17, 13, 19, 23)
+        .generateTexture('baseDestroyed', 32, 32);
       g.clear();
     }
     if (!this.textures.exists('powerUp')) {
-      g.fillStyle(0xffffff).fillCircle(18, 18, 16)
-        .lineStyle(3, 0xffffff, 0.95).strokeCircle(18, 18, 16)
-        .generateTexture('powerUp', 36, 36);
+      g.fillStyle(0x212529).fillRect(0, 0, 28, 28)
+        .fillStyle(0xffffff).fillRect(2, 2, 24, 24)
+        .fillStyle(0x212529).fillRect(5, 5, 18, 18)
+        .generateTexture('powerUp', 28, 28);
     }
     g.destroy();
+    ['retroPlayerTank', 'retroEnemyTank', 'retroBonusTank', 'retroBase', 'baseDestroyed', 'powerUp']
+      .forEach((key) => this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST));
+  }
+
+  drawPixelTank(graphics, bodyColor, accentColor) {
+    return graphics.fillStyle(0x212529).fillRect(2, 3, 7, 26)
+      .fillRect(23, 3, 7, 26)
+      .fillStyle(0x495057).fillRect(3, 5, 4, 5)
+      .fillRect(3, 13, 4, 5).fillRect(3, 21, 4, 5)
+      .fillRect(25, 5, 4, 5).fillRect(25, 13, 4, 5).fillRect(25, 21, 4, 5)
+      .fillStyle(bodyColor).fillRect(9, 7, 14, 20)
+      .fillStyle(accentColor).fillRect(12, 10, 8, 10)
+      .fillStyle(0x111111).fillRect(14, 12, 4, 6)
+      .fillStyle(bodyColor).fillRect(14, 0, 4, 13)
+      .fillStyle(0xffffff, 0.45).fillRect(10, 8, 3, 11);
   }
 
   drawArena() {
-    this.add.image(
-      TANK_ARENA.x + TANK_ARENA.width / 2,
-      TANK_ARENA.y + TANK_ARENA.height / 2,
-      'tank-bg',
-    ).setDisplaySize(TANK_ARENA.width, TANK_ARENA.height);
-    const overlays = [0x071016, 0x15120a, 0x100818];
-    const accents = [0x5ecfb1, 0xffc857, 0xb197fc];
     const grid = this.add.graphics();
-    grid.fillStyle(overlays[this.levelIndex % overlays.length], 0.2)
+    grid.fillStyle(0x050505, 1)
       .fillRect(TANK_ARENA.x, TANK_ARENA.y, TANK_ARENA.width, TANK_ARENA.height);
-    grid.lineStyle(1, accents[this.levelIndex % accents.length], 0.09);
-    for (let x = 30; x < 840; x += 32) grid.lineBetween(x, 58, x, 638);
-    for (let y = 62; y < 638; y += 32) grid.lineBetween(22, y, 838, y);
-    grid.lineStyle(2, accents[this.levelIndex % accents.length], 0.5)
-      .strokeRoundedRect(TANK_ARENA.x, TANK_ARENA.y, TANK_ARENA.width, TANK_ARENA.height, 8);
+    for (let y = TANK_ARENA.y + 13; y < TANK_ARENA.y + TANK_ARENA.height; y += 26) {
+      for (let x = TANK_ARENA.x + 13; x < TANK_ARENA.x + TANK_ARENA.width; x += 26) {
+        grid.fillStyle((x + y) % 52 ? 0x101010 : 0x151515, 1).fillRect(x - 1, y - 1, 2, 2);
+      }
+    }
+    grid.lineStyle(3, 0x6c757d, 0.75)
+      .strokeRect(TANK_ARENA.x, TANK_ARENA.y, TANK_ARENA.width, TANK_ARENA.height);
   }
 
   addWall(x, y, width, height) {
-    const colors = [0x29343a, 0x4a4030, 0x352f4f];
-    const trims = [0x8aa69e, 0xc9a45c, 0x9b8ed1];
-    const colorIndex = this.levelIndex % colors.length;
-    const wall = this.add.rectangle(x, y, width, height, colors[colorIndex], 0.96)
-      .setStrokeStyle(2, trims[colorIndex], 0.85);
-    this.add.rectangle(x, y - height / 2 + 4, width - 5, 5, trims[colorIndex], 0.6);
+    const wall = this.add.rectangle(x, y, width, height, 0xadb5bd, 1)
+      .setStrokeStyle(2, 0xf1f3f5, 0.9);
+    this.add.rectangle(x, y, Math.max(2, width - 8), Math.max(2, height - 8), 0x495057, 1);
+    const rivets = this.add.graphics().setDepth(3);
+    rivets.fillStyle(0xe9ecef, 0.9);
+    for (let tileX = x - width / 2 + 7; tileX < x + width / 2; tileX += 18) {
+      for (let tileY = y - height / 2 + 7; tileY < y + height / 2; tileY += 18) {
+        rivets.fillRect(tileX, tileY, 2, 2);
+      }
+    }
     this.physics.add.existing(wall, true);
     this.walls.add(wall);
   }
 
   addBreakableWall(x, y, width, height) {
-    const wall = this.add.rectangle(x, y, width, height, 0x9c4f32, 0.98)
-      .setStrokeStyle(2, 0xffa06b, 0.9);
-    const bricks = this.add.graphics();
-    bricks.lineStyle(2, 0x54291f, 0.85);
+    const columns = Math.max(1, Math.ceil(width / 20));
+    const rows = Math.max(1, Math.ceil(height / 20));
+    const tileWidth = width / columns;
+    const tileHeight = height / rows;
     const left = x - width / 2;
     const top = y - height / 2;
-    for (let rowY = top + 11; rowY < top + height; rowY += 11) {
-      bricks.lineBetween(left, rowY, left + width, rowY);
+
+    for (let row = 0; row < rows; row += 1) {
+      for (let column = 0; column < columns; column += 1) {
+        const tileX = left + tileWidth * (column + 0.5);
+        const tileY = top + tileHeight * (row + 0.5);
+        const color = (row + column) % 2 ? 0xa94727 : 0x92391f;
+        const wall = this.add.rectangle(tileX, tileY, tileWidth, tileHeight, color, 1)
+          .setStrokeStyle(1, 0x3b1d14, 1)
+          .setDepth(4);
+        const highlight = this.add.rectangle(
+          tileX,
+          tileY - tileHeight * 0.24,
+          Math.max(2, tileWidth - 5),
+          Math.max(2, tileHeight * 0.18),
+          0xf08c46,
+          0.72,
+        ).setDepth(5);
+        wall.setData('decoration', highlight);
+        this.physics.add.existing(wall, true);
+        this.breakableWalls.add(wall);
+      }
     }
-    for (let columnX = left + 18; columnX < left + width; columnX += 36) {
-      bricks.lineBetween(columnX, top, columnX, top + height);
-    }
-    for (let columnX = left + 36; columnX < left + width; columnX += 36) {
-      bricks.lineBetween(columnX, top + 11, columnX, top + height);
-    }
-    wall.setData('decoration', bricks);
-    this.physics.add.existing(wall, true);
-    this.breakableWalls.add(wall);
   }
 
   spawnEnemy(x, y, index) {
     const state = this.model.createEnemyState(index);
-    const enemy = this.enemies.create(x, y, 'enemyTank')
-      .setDisplaySize(48, 52)
+    const isBonus = (index + this.levelIndex) % 4 === 1;
+    const enemy = this.enemies.create(x, y, isBonus ? 'retroBonusTank' : 'retroEnemyTank')
+      .setDisplaySize(36, 36)
       .setCollideWorldBounds(true)
       .setData('turnAt', state.turnAt)
-      .setData('shootAt', state.shootAt);
-    enemy.body.setSize(200, 200).setOffset(28, 28);
+      .setData('shootAt', state.shootAt)
+      .setData('isBonus', isBonus);
+    enemy.body.setSize(28, 28).setOffset(2, 2);
   }
 
   update(time) {
@@ -240,8 +281,11 @@ export class TankScene extends Phaser.Scene {
     if (this.playerShield?.active) this.playerShield.setPosition(this.player.x, this.player.y);
     this.updatePlayer(time);
     this.enemies.children.iterate((enemy) => {
-      if (enemy?.active) this.updateEnemy(enemy, time);
+      if (!enemy?.active) return;
+      if (time < this.enemiesFrozenUntil) enemy.setVelocity(0);
+      else this.updateEnemy(enemy, time);
     });
+    this.updatePowerStatus(time);
     [...this.bullets.getChildren(), ...this.enemyBullets.getChildren()].forEach((bullet) => {
       const halfWidth = bullet.displayWidth / 2;
       const halfHeight = bullet.displayHeight / 2;
@@ -259,14 +303,26 @@ export class TankScene extends Phaser.Scene {
       return;
     }
     let moving = false;
-    if (this.cursors.left.isDown || this.keys.A.isDown || mobileControls.isDown('left')) {
+    const axis = mobileControls.axis();
+    const analogActive = Math.hypot(axis.x, axis.y) >= 0.16;
+    const horizontalDominant = Math.abs(axis.x) >= Math.abs(axis.y);
+    const analogSpeed = TANK_RULES.playerSpeed * Math.max(0.45, Math.min(1, Math.hypot(axis.x, axis.y)));
+    if (this.cursors.left.isDown || this.keys.A.isDown) {
       this.player.setVelocity(-TANK_RULES.playerSpeed, 0).setAngle(-90); moving = true;
-    } else if (this.cursors.right.isDown || this.keys.D.isDown || mobileControls.isDown('right')) {
+    } else if (this.cursors.right.isDown || this.keys.D.isDown) {
       this.player.setVelocity(TANK_RULES.playerSpeed, 0).setAngle(90); moving = true;
-    } else if (this.cursors.up.isDown || this.keys.W.isDown || mobileControls.isDown('up')) {
+    } else if (this.cursors.up.isDown || this.keys.W.isDown) {
       this.player.setVelocity(0, -TANK_RULES.playerSpeed).setAngle(0); moving = true;
-    } else if (this.cursors.down.isDown || this.keys.S.isDown || mobileControls.isDown('down')) {
+    } else if (this.cursors.down.isDown || this.keys.S.isDown) {
       this.player.setVelocity(0, TANK_RULES.playerSpeed).setAngle(180); moving = true;
+    } else if (analogActive && horizontalDominant && axis.x < 0) {
+      this.player.setVelocity(-analogSpeed, 0).setAngle(-90); moving = true;
+    } else if (analogActive && horizontalDominant && axis.x > 0) {
+      this.player.setVelocity(analogSpeed, 0).setAngle(90); moving = true;
+    } else if (analogActive && axis.y < 0) {
+      this.player.setVelocity(0, -analogSpeed).setAngle(0); moving = true;
+    } else if (analogActive && axis.y > 0) {
+      this.player.setVelocity(0, analogSpeed).setAngle(180); moving = true;
     }
     if (!moving) this.player.setVelocity(0);
     if ((this.keys.SPACE.isDown || mobileControls.isDown('primary')) && this.model.canPlayerShoot(time)) {
@@ -310,13 +366,17 @@ export class TankScene extends Phaser.Scene {
 
   shoot(tank, group, speed) {
     const angle = Phaser.Math.DegToRad(tank.angle - 90);
-    const muzzleDistance = 30;
+    // Keep the projectile close to the 32px retro tank. The old 30px offset
+    // could place a shot beyond a thin brick when the tank was touching it.
+    const muzzleDistance = 18;
     const x = tank.x + Math.cos(angle) * muzzleDistance;
     const y = tank.y + Math.sin(angle) * muzzleDistance;
     const bullet = group.get(x, y, 'bullet');
     if (!bullet) return;
     bullet.setActive(true).setVisible(true);
     bullet.body.enable = true;
+    bullet.body.reset(x, y);
+    bullet.body.setSize(6, 6).setOffset(1, 1);
     bullet.clearTint();
     bullet.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
   }
@@ -357,19 +417,122 @@ export class TankScene extends Phaser.Scene {
   hitEnemy(bullet, enemy) {
     if (this.phase !== 'playing' || !enemy.active) return;
     const { x, y } = enemy;
+    const dropsPowerUp = enemy.getData('isBonus');
     bullet.destroy();
     enemy.destroy();
     soundFX.play('explosion');
     this.createTankExplosion(x, y);
     const stageCleared = this.model.hitEnemy(this.enemies.countActive());
     this.updateHud();
+    const droppedPowerUp = dropsPowerUp ? this.dropPowerUp(x, y) : null;
+    if (stageCleared && droppedPowerUp) this.collectPowerUp(droppedPowerUp);
     if (stageCleared) this.completeLevel();
+  }
+
+  dropPowerUp(x, y) {
+    const definition = Phaser.Utils.Array.GetRandom(POWER_UPS);
+    const powerUp = this.powerUps.create(x, y, 'powerUp')
+      .setDisplaySize(30, 30)
+      .setTint(definition.color)
+      .setDepth(13)
+      .setData('type', definition.key)
+      .setData('nameKey', definition.nameKey);
+    powerUp.body.setSize(28, 28).setOffset(0, 0);
+    const label = this.add.text(x, y, definition.labels[getLanguage() === 'zh' ? 0 : 1], {
+      fontFamily: 'Arial Black', fontSize: '15px', color: '#ffffff',
+    }).setOrigin(0.5).setDepth(14);
+    powerUp.setData('label', label);
+    this.tweens.add({ targets: [powerUp, label], alpha: 0.45, duration: 260, yoyo: true, repeat: -1 });
+    this.time.delayedCall(12000, () => {
+      if (!powerUp.active) return;
+      this.tweens.killTweensOf(label);
+      label.destroy();
+      powerUp.destroy();
+    });
+    return powerUp;
+  }
+
+  collectPowerUp(powerUp) {
+    if (!powerUp?.active || this.phase !== 'playing') return;
+    const type = powerUp.getData('type');
+    const name = t(powerUp.getData('nameKey'));
+    const label = powerUp.getData('label');
+    this.tweens.killTweensOf(powerUp);
+    this.tweens.killTweensOf(label);
+    label?.destroy();
+    powerUp.destroy();
+    soundFX.play('coin');
+    this.showPowerNotice(name);
+
+    if (type === 'freeze') this.freezeEnemies();
+    else if (type === 'bomb') this.destroyAllEnemies();
+    else if (type === 'shield') this.activatePlayerShield(this.player, POWER_DURATION);
+    else if (type === 'life') this.model.addLife();
+    else if (type === 'fortify') this.activateBaseProtection();
+    this.updateHud();
+  }
+
+  freezeEnemies() {
+    this.enemiesFrozenUntil = this.time.now + POWER_DURATION;
+    this.enemies.children.iterate((enemy) => {
+      if (!enemy?.active) return;
+      enemy.setVelocity(0)
+        .setData('turnAt', this.enemiesFrozenUntil)
+        .setData('shootAt', this.enemiesFrozenUntil + 450);
+    });
+  }
+
+  destroyAllEnemies() {
+    const enemies = this.enemies.getChildren().filter((enemy) => enemy.active);
+    enemies.forEach((enemy, index) => {
+      this.createTankExplosion(enemy.x, enemy.y);
+      enemy.destroy();
+      this.model.hitEnemy(enemies.length - index - 1);
+    });
+    this.updateHud();
+    if (enemies.length) this.completeLevel();
+  }
+
+  activateBaseProtection() {
+    this.baseProtectionExpiresAt = this.time.now + POWER_DURATION;
+    this.baseSteelWalls.clear(true, true);
+    [
+      [382, 594, 22, 78], [478, 594, 22, 78], [430, 552, 118, 22],
+    ].forEach(([x, y, width, height]) => {
+      const wall = this.add.rectangle(x, y, width, height, 0xcfd4da, 1)
+        .setStrokeStyle(2, 0xffffff, 1)
+        .setDepth(11);
+      this.physics.add.existing(wall, true);
+      this.baseSteelWalls.add(wall);
+    });
+    const expiresAt = this.baseProtectionExpiresAt;
+    this.time.delayedCall(POWER_DURATION, () => {
+      if (this.baseProtectionExpiresAt !== expiresAt) return;
+      this.baseSteelWalls.clear(true, true);
+    });
+  }
+
+  showPowerNotice(message) {
+    this.powerNotice?.destroy();
+    const notice = this.add.text(430, 92, `${t('tank.power')}  ·  ${message}`, {
+      fontFamily: 'Consolas', fontSize: '16px', color: '#fff3bf',
+      backgroundColor: '#000000dd', padding: { x: 12, y: 7 },
+    }).setOrigin(0.5).setDepth(30);
+    this.powerNotice = notice;
+    this.tweens.add({
+      targets: notice, alpha: 0, y: 78, delay: 850, duration: 350,
+      onComplete: () => {
+        notice.destroy();
+        if (this.powerNotice === notice) this.powerNotice = null;
+      },
+    });
   }
 
   hitPlayer(player, bullet) {
     if (this.phase !== 'playing') return;
     bullet.destroy();
     if (player.getData('recovering')) return;
+    if (this.time.now < this.playerInvincibleUntil) return;
     if (this.time.now < player.getData('lastHit') + TANK_RULES.hitImmunity) return;
     player.setData('lastHit', this.time.now);
     this.createTankExplosion(player.x, player.y);
@@ -378,7 +541,7 @@ export class TankScene extends Phaser.Scene {
     this.updateHud();
     this.cameras.main.flash(150, 255, 50, 50, false);
     if (this.model.finished) {
-      this.endGame(false, '战车被击毁 / TANK LOST');
+      this.endGame(false, 'tank.tankLost');
       return;
     }
     this.recoverPlayerAfterHit(player);
@@ -398,9 +561,10 @@ export class TankScene extends Phaser.Scene {
     });
   }
 
-  activatePlayerShield(player) {
+  activatePlayerShield(player, duration = TANK_RULES.hitImmunity) {
     player.setData('lastHit', this.time.now);
-    this.shieldExpiresAt = this.time.now + TANK_RULES.hitImmunity;
+    this.playerInvincibleUntil = Math.max(this.playerInvincibleUntil, this.time.now + duration);
+    this.shieldExpiresAt = this.playerInvincibleUntil;
     if (this.playerShield) {
       this.tweens.killTweensOf(this.playerShield);
       this.playerShield.destroy();
@@ -417,7 +581,7 @@ export class TankScene extends Phaser.Scene {
       repeat: -1,
     });
     const expiresAt = this.shieldExpiresAt;
-    this.time.delayedCall(TANK_RULES.hitImmunity, () => {
+    this.time.delayedCall(this.shieldExpiresAt - this.time.now, () => {
       if (this.shieldExpiresAt !== expiresAt || !this.playerShield) return;
       this.tweens.killTweensOf(this.playerShield);
       this.playerShield.destroy();
@@ -428,10 +592,15 @@ export class TankScene extends Phaser.Scene {
   hitBase(bullet, reason) {
     bullet.destroy();
     if (this.phase !== 'playing') return;
+    if (this.time.now < this.baseProtectionExpiresAt) {
+      soundFX.play('stomp');
+      this.cameras.main.flash(70, 255, 255, 255, false);
+      return;
+    }
     this.phase = 'base-hit';
     this.physics.pause();
     soundFX.play('explosion');
-    this.base.clearTint().setTexture('baseDestroyed').setDisplaySize(64, 64).refreshBody();
+    this.base.clearTint().setTexture('baseDestroyed').setDisplaySize(46, 46).refreshBody();
     this.cameras.main.shake(320, 0.012);
     this.createBaseExplosion();
     this.time.delayedCall(420, () => this.endGame(false, reason, false));
@@ -479,9 +648,9 @@ export class TankScene extends Phaser.Scene {
     this.phase = finalLevel ? 'complete' : 'stage-clear';
     if (finalLevel) {
       this.model.finish(true);
-      this.message.setText(`全部战区解放！\nALL MISSIONS CLEAR\n总分 ${this.model.score}\n按 ENTER 重新出击`).setVisible(true);
+      this.message.setText(`${t('tank.allClear')}\n${t('tank.total', { score: this.model.score })}`).setVisible(true);
     } else {
-      this.message.setText(`战区解放 / STAGE CLEAR\n奖励 +${this.level.clearBonus}\n即将进入下一关…`).setVisible(true);
+      this.message.setText(`${t('tank.stageClear')}\n${t('tank.next', { bonus: this.level.clearBonus })}`).setVisible(true);
       this.time.delayedCall(1200, () => {
         if (this.phase === 'stage-clear') {
           this.scene.restart({
@@ -494,14 +663,14 @@ export class TankScene extends Phaser.Scene {
     }
   }
 
-  endGame(won, reason = won ? '任务完成 / CLEAR' : '基地失守 / BASE LOST', playExplosion = true) {
+  endGame(won, reasonKey = won ? 'tank.stageClear' : 'tank.baseLost', playExplosion = true) {
     if (this.phase !== 'playing' && this.phase !== 'base-hit') return;
     this.phase = won ? 'complete' : 'lost';
     this.model.finish(won);
     soundFX.play(won ? 'win' : 'lose');
     if (!won && playExplosion) soundFX.play('explosion');
     this.physics.pause();
-    this.message.setText(`${reason}\n得分 ${this.model.score}\nENTER 重试本关  ·  R 从第1关开始`).setVisible(true);
+    this.message.setText(`${t(reasonKey)}\n${t('tank.retry', { score: this.model.score })}`).setVisible(true);
   }
 
   handleContinue() {
@@ -531,7 +700,7 @@ export class TankScene extends Phaser.Scene {
       if (this.player.getData('recovering')) return;
       this.phase = 'paused';
       this.physics.pause();
-      this.message.setText('游戏暂停\nPAUSED  ·  按 P 或轻触暂停键继续').setVisible(true);
+      this.message.setText(`${t('tank.paused')}\n${t('tank.resume')}`).setVisible(true);
     } else if (this.phase === 'paused') {
       this.phase = 'playing';
       this.physics.resume();
@@ -602,12 +771,26 @@ export class TankScene extends Phaser.Scene {
   }
 
   updateHud() {
-    this.levelText?.setText(`STAGE ${this.levelIndex + 1}/${TANK_LEVELS.length}  ·  ${this.level.name}`);
-    this.hud?.setText(`SCORE ${String(this.model.score).padStart(4, '0')}   LIFE ${this.model.lives}`);
+    const levelName = getLanguage() === 'zh' ? this.level.name : this.level.subtitle;
+    this.levelText?.setText(`${t('tank.stage')} ${this.levelIndex + 1}/${TANK_LEVELS.length}  ·  ${levelName}`);
+    this.hud?.setText(`${t('tank.score')} ${String(this.model.score).padStart(4, '0')}   ${t('tank.life')} ${this.model.lives}`);
+  }
+
+  updatePowerStatus(time = this.time.now) {
+    if (!this.powerStatusText) return;
+    const statuses = [];
+    const freezeSeconds = Math.ceil((this.enemiesFrozenUntil - time) / 1000);
+    const shieldSeconds = Math.ceil((this.playerInvincibleUntil - time) / 1000);
+    const baseSeconds = Math.ceil((this.baseProtectionExpiresAt - time) / 1000);
+    if (freezeSeconds > 0) statuses.push(`${t('tank.freezeShort')} ${freezeSeconds}s`);
+    if (shieldSeconds > 1) statuses.push(`${t('tank.shieldShort')} ${shieldSeconds}s`);
+    if (baseSeconds > 0) statuses.push(`${t('tank.baseShort')} ${baseSeconds}s`);
+    this.powerStatusText.setText(statuses.join('   '));
   }
 
   showStageIntro() {
-    const intro = this.add.text(430, 260, `MISSION ${this.levelIndex + 1}\n${this.level.name}\n${this.level.subtitle}`, {
+    const levelName = getLanguage() === 'zh' ? this.level.name : this.level.subtitle;
+    const intro = this.add.text(430, 260, `${t('tank.mission')} ${this.levelIndex + 1}\n${levelName}`, {
       fontFamily: 'Arial Black', fontSize: '24px', color: '#ffffff', align: 'center',
       backgroundColor: '#080b14dd', padding: { x: 28, y: 18 },
     }).setOrigin(0.5).setDepth(15);

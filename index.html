@@ -11,7 +11,7 @@
       <header class="brand">
         <div class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         <div>
-          <h1>小游戏厅 <span>MINI ARCADE</span></h1>
+          <h1><b data-i18n="global.brand">小游戏厅</b> <span>MINI ARCADE</span></h1>
         </div>
       </header>
 
@@ -21,16 +21,23 @@
 
       <section id="touch-controls" class="touch-controls" aria-label="手机触摸控制面板">
         <div class="touch-controls__head">
-          <span class="touch-indicator"><b></b> 触控模式 / TOUCH</span>
-          <span id="touch-hint">轻触游戏卡片开始</span>
+          <span class="touch-indicator"><b></b><span data-i18n="global.touch">触控模式 / TOUCH</span></span>
+          <div class="touch-mode-selector" aria-label="移动控制模式">
+            <button type="button" data-movement-mode="buttons" data-i18n="global.buttons">方向键</button>
+            <button type="button" data-movement-mode="joystick" data-i18n="global.joystick">摇杆</button>
+          </div>
         </div>
         <div class="touch-speed-selector" aria-label="贪吃蛇速度选择">
-          <span>速度</span>
-          <button type="button" data-control="speed-slow">慢速</button>
-          <button type="button" data-control="speed-normal">标准</button>
-          <button type="button" data-control="speed-fast">快速</button>
+          <span data-i18n="global.speed">速度</span>
+          <button type="button" data-control="speed-slow" data-i18n="global.slow">慢速</button>
+          <button type="button" data-control="speed-normal" data-i18n="global.normal">标准</button>
+          <button type="button" data-control="speed-fast" data-i18n="global.fast">快速</button>
         </div>
         <div class="touch-controls__body">
+          <div class="touch-joystick" aria-label="虚拟摇杆">
+            <div class="touch-joystick__ring"></div>
+            <div class="touch-joystick__knob"></div>
+          </div>
           <div class="touch-dpad" aria-label="方向控制">
             <button type="button" data-control="up" aria-label="向上">▲</button>
             <button type="button" data-control="left" aria-label="向左">◀</button>
@@ -38,18 +45,19 @@
             <button type="button" data-control="right" aria-label="向右">▶</button>
           </div>
           <div class="touch-actions">
-            <button type="button" data-control="primary"><strong>A</strong><span>操作</span></button>
-            <button type="button" data-control="secondary"><strong>B</strong><span>操作</span></button>
-            <button type="button" class="touch-small" data-control="pause"><strong>Ⅱ</strong><span>暂停</span></button>
-            <button type="button" class="touch-small" data-control="restart"><strong>↺</strong><span>重开</span></button>
-            <button type="button" class="touch-small" data-control="home"><strong>⌂</strong><span>返回</span></button>
+            <button type="button" data-control="primary"><strong>A</strong><span data-i18n="global.action">操作</span></button>
+            <button type="button" data-control="tertiary"><strong>C</strong><span data-i18n="global.action">操作</span></button>
+            <button type="button" data-control="secondary"><strong>B</strong><span data-i18n="global.action">操作</span></button>
+            <button type="button" class="touch-small" data-control="pause"><strong>Ⅱ</strong><span data-i18n="global.pause">暂停</span></button>
+            <button type="button" class="touch-small" data-control="restart"><strong>↺</strong><span data-i18n="global.restart">重开</span></button>
+            <button type="button" class="touch-small" data-control="home"><strong>⌂</strong><span data-i18n="global.home">返回</span></button>
           </div>
         </div>
       </section>
 
       <footer>
-        <span>四款游戏 · 纯 JavaScript · Phaser 3</span>
-        <span class="status"><b></b> 系统就绪 / READY</span>
+        <span data-i18n="global.footer">四款游戏 · 纯 JavaScript · Phaser 3</span>
+        <span class="status"><b></b><span data-i18n="global.ready">系统就绪</span></span>
       </footer>
     </main>
     <script type="module" src="/src/main.js"></script>

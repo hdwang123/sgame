@@ -1,39 +1,44 @@
+import { t } from '../i18n.js';
+
 const PROFILES = {
   menu: {
     controls: [],
-    hint: '轻触任意游戏卡片即可开始',
   },
   tetris: {
     controls: ['left', 'right', 'down', 'primary', 'secondary', 'pause', 'restart', 'home'],
-    hint: '按住方向键移动 · A 旋转 · B 直落',
-    labels: { primary: ['↻', '旋转'], secondary: ['⇣', '直落'] },
+    labels: { primary: ['↻', 'touch.rotate'], secondary: ['⇣', 'touch.drop'] },
   },
   snake: {
     controls: ['up', 'left', 'down', 'right', 'pause', 'restart', 'home', 'speed-slow', 'speed-normal', 'speed-fast'],
-    hint: '轻触方向键控制蛇的前进方向',
     selected: 'speed-normal',
   },
   maryJump: {
-    controls: ['left', 'right', 'primary', 'secondary', 'pause', 'restart', 'home'],
-    hint: '按住左右移动 · A 跳跃 · B 从第1关开始',
-    labels: { primary: ['▲', '跳跃'], secondary: ['1', '第1关'] },
+    controls: ['left', 'right', 'primary', 'tertiary', 'secondary', 'pause', 'restart', 'home'],
+    joystick: true,
+    labels: { primary: ['▲', 'touch.jump'], tertiary: ['⇈', 'touch.bigJump'], secondary: ['1', 'touch.first'] },
   },
   tank: {
     controls: ['up', 'left', 'down', 'right', 'primary', 'secondary', 'pause', 'restart', 'home'],
-    hint: '按住方向键驾驶 · A 开火 · B 从第1关开始',
-    labels: { primary: ['●', '开火'], secondary: ['1', '第1关'] },
+    joystick: true,
+    labels: { primary: ['●', 'touch.fire'], secondary: ['1', 'touch.first'] },
   },
 };
 
 class MobileControls {
   constructor() {
     this.root = document.querySelector('#touch-controls');
-    this.hint = document.querySelector('#touch-hint');
     this.buttons = new Map();
     this.pressed = new Set();
     this.listeners = new Map();
+    this.joystick = this.root.querySelector('.touch-joystick');
+    this.joystickKnob = this.root.querySelector('.touch-joystick__knob');
+    this.joystickVector = { x: 0, y: 0 };
+    this.joystickPointerId = null;
+    this.movementMode = 'joystick';
     this.preventMobileBrowserMenus();
     this.bindButtons();
+    this.bindMovementModes();
+    this.bindJoystick();
     this.setProfile('menu');
   }
 
@@ -48,6 +53,8 @@ class MobileControls {
   bindButtons() {
     this.root.addEventListener('selectstart', (event) => event.preventDefault());
     this.root.addEventListener('dragstart', (event) => event.preventDefault());
+    this.root.addEventListener('contextmenu', (event) => event.preventDefault());
+    this.root.addEventListener('touchstart', (event) => event.preventDefault(), { passive: false });
     ['gesturestart', 'gesturechange', 'gestureend'].forEach((eventName) => {
       document.addEventListener(eventName, (event) => event.preventDefault(), { passive: false });
     });
@@ -77,12 +84,56 @@ class MobileControls {
     globalThis.addEventListener('blur', () => this.releaseAll());
   }
 
+  bindMovementModes() {
+    this.root.querySelectorAll('[data-movement-mode]').forEach((button) => {
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        this.setMovementMode(button.dataset.movementMode);
+      });
+    });
+  }
+
+  bindJoystick() {
+    const update = (event) => {
+      if (this.joystickPointerId !== event.pointerId) return;
+      event.preventDefault();
+      const bounds = this.joystick.getBoundingClientRect();
+      const centerX = bounds.left + bounds.width / 2;
+      const centerY = bounds.top + bounds.height / 2;
+      const dx = event.clientX - centerX;
+      const dy = event.clientY - centerY;
+      const distance = Math.hypot(dx, dy);
+      const radius = bounds.width * 0.32;
+      const scale = distance > radius ? radius / distance : 1;
+      this.joystickVector.x = (dx * scale) / radius;
+      this.joystickVector.y = (dy * scale) / radius;
+      this.joystickKnob.style.transform = `translate(${dx * scale}px, ${dy * scale}px)`;
+    };
+    const release = (event) => {
+      if (event?.pointerId !== undefined && this.joystickPointerId !== event.pointerId) return;
+      event?.preventDefault();
+      this.joystickPointerId = null;
+      this.resetJoystick();
+    };
+    this.joystick.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      this.joystickPointerId = event.pointerId;
+      this.joystick.setPointerCapture?.(event.pointerId);
+      globalThis.navigator?.vibrate?.(8);
+      update(event);
+    });
+    this.joystick.addEventListener('pointermove', update);
+    this.joystick.addEventListener('pointerup', release);
+    this.joystick.addEventListener('pointercancel', release);
+    this.joystick.addEventListener('lostpointercapture', release);
+  }
+
   setProfile(name) {
     const profile = PROFILES[name] ?? PROFILES.menu;
     this.releaseAll();
     this.root.dataset.profile = name;
+    this.root.classList.toggle('supports-joystick', Boolean(profile.joystick));
     document.body.dataset.gameProfile = name;
-    this.hint.textContent = profile.hint;
     const visible = new Set(profile.controls);
     this.buttons.forEach((button, control) => {
       button.classList.remove('is-selected');
@@ -90,10 +141,20 @@ class MobileControls {
       const label = profile.labels?.[control];
       if (label) {
         button.querySelector('strong').textContent = label[0];
-        button.querySelector('span').textContent = label[1];
+        button.querySelector('span').textContent = t(label[1]);
       }
     });
     if (profile.selected) this.select(profile.selected);
+    if (profile.joystick) this.setMovementMode(this.movementMode);
+  }
+
+  setMovementMode(mode) {
+    this.movementMode = mode === 'buttons' ? 'buttons' : 'joystick';
+    this.root.dataset.movementMode = this.movementMode;
+    this.root.querySelectorAll('[data-movement-mode]').forEach((button) => {
+      button.classList.toggle('is-selected', button.dataset.movementMode === this.movementMode);
+    });
+    this.releaseAll();
   }
 
   on(control, handler) {
@@ -119,6 +180,16 @@ class MobileControls {
     return this.pressed.has(control);
   }
 
+  axis() {
+    if (this.movementMode === 'joystick' && this.root.classList.contains('supports-joystick')) {
+      return { ...this.joystickVector };
+    }
+    return {
+      x: (this.pressed.has('right') ? 1 : 0) - (this.pressed.has('left') ? 1 : 0),
+      y: (this.pressed.has('down') ? 1 : 0) - (this.pressed.has('up') ? 1 : 0),
+    };
+  }
+
   select(control) {
     this.buttons.forEach((button, key) => {
       if (key.startsWith('speed-')) button.classList.toggle('is-selected', key === control);
@@ -128,6 +199,13 @@ class MobileControls {
   releaseAll() {
     this.pressed.clear();
     this.buttons.forEach((button) => button.classList.remove('is-pressed'));
+    this.resetJoystick();
+  }
+
+  resetJoystick() {
+    this.joystickVector.x = 0;
+    this.joystickVector.y = 0;
+    if (this.joystickKnob) this.joystickKnob.style.transform = 'translate(0, 0)';
   }
 }
 

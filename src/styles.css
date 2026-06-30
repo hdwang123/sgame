@@ -44,6 +44,7 @@ body::before {
 .brand-mark i:nth-child(3) { background: #38d9ff; }
 .brand-mark i:nth-child(4) { background: #69db7c; }
 h1 { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: clamp(22px, 3vw, 30px); line-height: 1; letter-spacing: .04em; }
+h1 b { font: inherit; }
 h1 span { color: #748ffc; font-size: .38em; font-weight: 600; letter-spacing: .18em; }
 
 .game-card {
@@ -106,7 +107,9 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   background: linear-gradient(145deg, #236c62, #173c42);
   box-shadow: 0 0 14px rgba(99, 230, 190, .2), inset 0 1px rgba(255,255,255,.1);
 }
-.touch-speed-selector { display: none; }
+.touch-speed-selector,
+.touch-mode-selector,
+.touch-joystick { display: none; }
 
 @media (pointer: coarse), (max-width: 800px) {
   html,
@@ -157,6 +160,63 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   }
   .touch-speed-selector span { margin-right: auto; color: #8490af; font-size: 11px; }
   .touch-speed-selector button { min-width: 76px; height: 46px; padding: 0 12px; border-radius: 23px; font: 13px 'Chakra Petch', sans-serif; }
+  .touch-controls.supports-joystick .touch-mode-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+  .touch-mode-selector button {
+    min-width: 58px;
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 16px;
+    font: 10px 'Chakra Petch', sans-serif;
+  }
+  .touch-controls.supports-joystick[data-movement-mode="joystick"] .touch-dpad { display: none; }
+  .touch-controls.supports-joystick[data-movement-mode="joystick"] .touch-joystick {
+    display: block;
+    position: relative;
+    flex: 0 0 156px;
+    width: 156px;
+    height: 156px;
+    border-radius: 50%;
+    touch-action: none;
+  }
+  .touch-joystick__ring {
+    position: absolute;
+    inset: 7px;
+    border: 2px solid rgba(116, 192, 252, .5);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle, rgba(57, 76, 118, .46) 0 29%, transparent 30%),
+      rgba(19, 25, 45, .82);
+    box-shadow: inset 0 0 28px rgba(0,0,0,.38), 0 0 20px rgba(76,110,245,.12);
+    pointer-events: none;
+  }
+  .touch-joystick__ring::before,
+  .touch-joystick__ring::after {
+    content: '';
+    position: absolute;
+    background: rgba(116, 192, 252, .2);
+    pointer-events: none;
+  }
+  .touch-joystick__ring::before { left: 50%; top: 10px; bottom: 10px; width: 1px; }
+  .touch-joystick__ring::after { top: 50%; left: 10px; right: 10px; height: 1px; }
+  .touch-joystick__knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+    border: 2px solid #91d5ff;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #4269a1, #202f57);
+    box-shadow: inset 0 2px rgba(255,255,255,.18), 0 8px 18px rgba(0,0,0,.42);
+    pointer-events: none;
+    will-change: transform;
+  }
   .touch-controls[data-profile="menu"] .touch-controls__body { display: none; }
   .touch-dpad { display: grid; grid-template: repeat(3, 58px) / repeat(3, 58px); gap: 6px; }
   .touch-dpad button { width: 58px; height: 58px; border-radius: 16px; font-size: 23px; }
@@ -176,12 +236,13 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    width: 122px;
-    max-width: 122px;
     justify-content: center;
   }
+  body[data-game-profile="maryJump"] .touch-actions { width: 174px; max-width: 174px; }
+  body[data-game-profile="tank"] .touch-actions { width: 122px; max-width: 122px; }
   body[data-game-profile="maryJump"] .touch-actions [data-control="primary"],
   body[data-game-profile="tank"] .touch-actions [data-control="primary"] { order: 1; }
+  body[data-game-profile="maryJump"] .touch-actions [data-control="tertiary"] { order: 1; }
   body[data-game-profile="maryJump"] .touch-actions [data-control="pause"],
   body[data-game-profile="tank"] .touch-actions [data-control="pause"] { order: 2; }
   body[data-game-profile="maryJump"] .touch-actions [data-control="restart"],
@@ -197,6 +258,7 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   body[data-game-profile="maryJump"] .touch-actions [data-control="home"],
   body[data-game-profile="tank"] .touch-actions [data-control="home"] { order: 5; }
   body[data-game-profile="tetris"] #game-container { aspect-ratio: 620 / 680; }
+  body[data-game-profile="menu"] #game-container { aspect-ratio: 620 / 760; }
   body[data-game-profile="tetris"] .brand,
   body[data-game-profile="snake"] .brand,
   body[data-game-profile="maryJump"] .brand,
@@ -291,10 +353,14 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   body[data-game-profile="maryJump"] .touch-dpad button { width: 62px; height: 62px; }
   body[data-game-profile="maryJump"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
   body[data-game-profile="maryJump"] .touch-dpad [data-control="right"] { grid-area: 1 / 2; }
-  body[data-game-profile="maryJump"] .touch-actions,
   body[data-game-profile="tank"] .touch-actions {
     width: calc(var(--small-action-size) * 2 + 8px);
     max-width: calc(var(--small-action-size) * 2 + 8px);
+    gap: 8px;
+  }
+  body[data-game-profile="maryJump"] .touch-actions {
+    width: calc(var(--action-size) * 2 + 8px);
+    max-width: calc(var(--action-size) * 2 + 8px);
     gap: 8px;
   }
   body[data-game-profile="maryJump"] .touch-actions [data-control="secondary"],
@@ -303,8 +369,25 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     height: var(--small-action-size);
   }
 }
+.touch-controls button strong,
+.touch-controls button span {
+  pointer-events: none;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
 
 @media (max-width: 340px) {
+  .touch-controls.supports-joystick[data-movement-mode="joystick"] .touch-joystick {
+    flex-basis: 132px;
+    width: 132px;
+    height: 132px;
+  }
+  .touch-joystick__knob {
+    width: 56px;
+    height: 56px;
+    margin: -28px 0 0 -28px;
+  }
   body[data-game-profile="tetris"] .touch-controls__body { gap: 4px; }
   body[data-game-profile="tetris"] .touch-dpad {
     --tetris-direction-size: 58px;

@@ -16,7 +16,7 @@ export const TANK_ARENA = {
 
 const BASE_BREAKABLE_WALLS = [
   [382, 594, 22, 78], [478, 594, 22, 78],
-  [402, 558, 38, 22], [458, 558, 38, 22],
+  [430, 558, 118, 22],
 ];
 
 const LATE_STAGE_ENEMY_SPAWNS = [

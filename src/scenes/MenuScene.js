@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import { mobileControls } from '../ui/MobileControls.js';
+import { getLanguage, setLanguage, t } from '../i18n.js';
 
 const GAMES = [
-  { key: 'tetris', number: '01', title: '俄罗斯方块', en: 'NEON BLOCKS', color: 0x748ffc, icon: '▦', desc: '堆叠、旋转、消除' },
-  { key: 'snake', number: '02', title: '贪吃蛇', en: 'CYBER SNAKE', color: 0x51cf66, icon: '●', desc: '吞噬能量，不断生长' },
-  { key: 'maryJump', number: '03', title: '玛丽跳跃', en: 'MARY JUMP', color: 0xff922b, icon: '▲', desc: '奔跑、跳跃、抵达终点' },
-  { key: 'tank', number: '04', title: '坦克大战', en: 'TANK STRIKE', color: 0x38d9a9, icon: '◆', desc: '守住基地，消灭敌军' },
+  { key: 'tetris', number: '01', titleKey: 'game.tetris', subKey: 'game.tetris.sub', descKey: 'game.tetris.desc', color: 0x748ffc, icon: '▦' },
+  { key: 'snake', number: '02', titleKey: 'game.snake', subKey: 'game.snake.sub', descKey: 'game.snake.desc', color: 0x51cf66, icon: '●' },
+  { key: 'maryJump', number: '03', titleKey: 'game.mary', subKey: 'game.mary.sub', descKey: 'game.mary.desc', color: 0xff922b, icon: '▲' },
+  { key: 'tank', number: '04', titleKey: 'game.tank', subKey: 'game.tank.sub', descKey: 'game.tank.desc', color: 0x38d9a9, icon: '◆' },
 ];
 
 export class MenuScene extends Phaser.Scene {
@@ -14,52 +15,88 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
-    this.scale.resize(860, 680);
+    this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
+    this.scale.resize(this.isMobileLayout ? 620 : 860, this.isMobileLayout ? 760 : 680);
     mobileControls.setProfile('menu');
     this.selected = 0;
     this.cards = [];
     this.drawBackdrop();
-    this.add.text(64, 44, '选择游戏', { fontFamily: 'Arial Black, Arial', fontSize: '34px', color: '#f5f7ff' });
-    this.add.text(66, 87, 'SELECT A GAME  ·  按 ENTER 开始', { fontFamily: 'Arial', fontSize: '13px', color: '#7681a6', letterSpacing: 1 });
+    const titleX = this.isMobileLayout ? 34 : 64;
+    this.add.text(titleX, this.isMobileLayout ? 28 : 44, t('menu.title'), {
+      fontFamily: 'Arial Black, Arial', fontSize: this.isMobileLayout ? '28px' : '34px', color: '#f5f7ff',
+    });
+    this.add.text(titleX + 2, this.isMobileLayout ? 68 : 87, t('menu.hint'), {
+      fontFamily: 'Arial', fontSize: '12px', color: '#7681a6', letterSpacing: 1,
+    });
+    this.createLanguageSelector();
     GAMES.forEach((game, index) => this.createCard(game, index));
-    this.add.text(430, 638, '方向键选择  ·  ENTER 开始  ·  数字键快速进入', { fontFamily: 'Arial', fontSize: '12px', color: '#697392' }).setOrigin(0.5);
-    this.input.keyboard.on('keydown-LEFT', () => this.select(this.selected % 2 === 0 ? this.selected + 1 : this.selected - 1));
-    this.input.keyboard.on('keydown-RIGHT', () => this.select(this.selected % 2 === 0 ? this.selected + 1 : this.selected - 1));
-    this.input.keyboard.on('keydown-UP', () => this.select((this.selected + 2) % 4));
-    this.input.keyboard.on('keydown-DOWN', () => this.select((this.selected + 2) % 4));
+    this.add.text(this.scale.width / 2, this.scale.height - 28, t('menu.controls'), {
+      fontFamily: 'Arial', fontSize: this.isMobileLayout ? '10px' : '12px', color: '#697392',
+    }).setOrigin(0.5);
+    this.input.keyboard.on('keydown-LEFT', () => this.select(this.isMobileLayout ? this.selected - 1 : (this.selected % 2 === 0 ? this.selected + 1 : this.selected - 1)));
+    this.input.keyboard.on('keydown-RIGHT', () => this.select(this.isMobileLayout ? this.selected + 1 : (this.selected % 2 === 0 ? this.selected + 1 : this.selected - 1)));
+    this.input.keyboard.on('keydown-UP', () => this.select(this.isMobileLayout ? this.selected - 1 : (this.selected + 2) % 4));
+    this.input.keyboard.on('keydown-DOWN', () => this.select(this.isMobileLayout ? this.selected + 1 : (this.selected + 2) % 4));
     this.input.keyboard.on('keydown-ENTER', () => this.scene.start(GAMES[this.selected].key));
     GAMES.forEach((game, index) => this.input.keyboard.on(`keydown-${index + 1}`, () => this.scene.start(game.key)));
+    this.input.keyboard.on('keydown-L', () => this.toggleLanguage());
     this.select(0);
   }
 
   drawBackdrop() {
     const graphics = this.add.graphics();
     graphics.lineStyle(1, 0x252b46, 0.35);
-    for (let x = 0; x < 860; x += 36) graphics.lineBetween(x, 0, x, 680);
-    for (let y = 0; y < 680; y += 36) graphics.lineBetween(0, y, 860, y);
-    this.add.circle(785, 55, 210, 0x5f3dc4, 0.1);
-    this.add.circle(40, 650, 160, 0x087f5b, 0.08);
+    for (let x = 0; x < this.scale.width; x += 36) graphics.lineBetween(x, 0, x, this.scale.height);
+    for (let y = 0; y < this.scale.height; y += 36) graphics.lineBetween(0, y, this.scale.width, y);
+    this.add.circle(this.scale.width - 75, 55, 210, 0x5f3dc4, 0.1);
+    this.add.circle(40, this.scale.height - 30, 160, 0x087f5b, 0.08);
   }
 
   createCard(game, index) {
-    const x = 64 + (index % 2) * 374;
-    const y = 138 + Math.floor(index / 2) * 226;
+    const x = this.isMobileLayout ? 30 : 64 + (index % 2) * 374;
+    const y = this.isMobileLayout ? 105 + index * 143 : 138 + Math.floor(index / 2) * 226;
+    const width = this.isMobileLayout ? 560 : 350;
+    const height = this.isMobileLayout ? 128 : 198;
     const card = this.add.container(x, y);
-    const bg = this.add.rectangle(0, 0, 350, 198, 0x101426, 0.94).setOrigin(0);
+    const bg = this.add.rectangle(0, 0, width, height, 0x101426, 0.94).setOrigin(0);
     bg.setStrokeStyle(1, 0x303856, 0.9).setInteractive({ useHandCursor: true });
-    const accent = this.add.rectangle(0, 0, 5, 198, game.color, 0.9).setOrigin(0);
-    const iconBg = this.add.rectangle(26, 30, 62, 62, game.color, 0.14).setOrigin(0).setStrokeStyle(1, game.color, 0.5);
+    const accent = this.add.rectangle(0, 0, 5, height, game.color, 0.9).setOrigin(0);
+    const iconBg = this.add.rectangle(this.isMobileLayout ? 20 : 26, this.isMobileLayout ? 20 : 30, 62, 62, game.color, 0.14).setOrigin(0).setStrokeStyle(1, game.color, 0.5);
     const color = `#${game.color.toString(16).padStart(6, '0')}`;
-    const icon = this.add.text(57, 61, game.icon, { fontFamily: 'Arial Black', fontSize: '28px', color }).setOrigin(0.5);
-    const num = this.add.text(318, 22, game.number, { fontFamily: 'Consolas', fontSize: '12px', color: '#5f6887' }).setOrigin(1, 0);
-    const title = this.add.text(108, 32, game.title, { fontFamily: 'Arial Black', fontSize: '20px', color: '#eef1ff' });
-    const en = this.add.text(108, 65, game.en, { fontFamily: 'Arial', fontSize: '11px', color: '#8d97b9', letterSpacing: 1 });
-    const desc = this.add.text(27, 126, game.desc, { fontFamily: 'Arial', fontSize: '13px', color: '#7781a0' });
-    const action = this.add.text(27, 160, '开始  /  PLAY  →', { fontFamily: 'Arial', fontSize: '12px', color });
+    const icon = this.add.text(this.isMobileLayout ? 51 : 57, this.isMobileLayout ? 51 : 61, game.icon, { fontFamily: 'Arial Black', fontSize: '28px', color }).setOrigin(0.5);
+    const num = this.add.text(width - 24, 18, game.number, { fontFamily: 'Consolas', fontSize: '12px', color: '#5f6887' }).setOrigin(1, 0);
+    const title = this.add.text(this.isMobileLayout ? 102 : 108, this.isMobileLayout ? 22 : 32, t(game.titleKey), { fontFamily: 'Arial Black', fontSize: '20px', color: '#eef1ff' });
+    const en = this.add.text(this.isMobileLayout ? 102 : 108, this.isMobileLayout ? 55 : 65, t(game.subKey), { fontFamily: 'Arial', fontSize: '11px', color: '#8d97b9', letterSpacing: 1 });
+    const desc = this.add.text(this.isMobileLayout ? 22 : 27, this.isMobileLayout ? 96 : 126, t(game.descKey), { fontFamily: 'Arial', fontSize: '13px', color: '#7781a0' });
+    const action = this.add.text(this.isMobileLayout ? width - 24 : 27, this.isMobileLayout ? 96 : 160, t('menu.play'), { fontFamily: 'Arial', fontSize: '12px', color }).setOrigin(this.isMobileLayout ? 1 : 0, 0);
     card.add([bg, accent, iconBg, icon, num, en, title, desc, action]);
     bg.on('pointerover', () => this.select(index));
     bg.on('pointerdown', () => this.scene.start(game.key));
     this.cards.push({ card, bg, accent, color: game.color });
+  }
+
+  createLanguageSelector() {
+    const y = this.isMobileLayout ? 36 : 50;
+    const startX = this.scale.width - (this.isMobileLayout ? 136 : 150);
+    [['zh', t('menu.zh')], ['en', t('menu.en')]].forEach(([language, label], index) => {
+      const x = startX + index * 72;
+      const selected = getLanguage() === language;
+      const button = this.add.rectangle(x, y, 66, 30, selected ? 0x315f58 : 0x171d35, 0.96)
+        .setStrokeStyle(selected ? 2 : 1, selected ? 0x63e6be : 0x3a4568)
+        .setInteractive({ useHandCursor: true });
+      this.add.text(x, y, label, {
+        fontFamily: 'Arial', fontSize: '10px', color: selected ? '#e6fff8' : '#aab4d2',
+      }).setOrigin(0.5);
+      button.on('pointerdown', () => {
+        setLanguage(language);
+        this.scene.restart();
+      });
+    });
+  }
+
+  toggleLanguage() {
+    setLanguage(getLanguage() === 'zh' ? 'en' : 'zh');
+    this.scene.restart();
   }
 
   select(index) {

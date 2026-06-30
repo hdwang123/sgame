@@ -7,6 +7,7 @@ import {
 import { TetrisGame } from '../game/tetris/TetrisGame.js';
 import { soundFX } from '../audio/SoundFX.js';
 import { mobileControls } from '../ui/MobileControls.js';
+import { t } from '../i18n.js';
 
 const DESKTOP_CELL_SIZE = 31;
 const DESKTOP_BOARD_X = 54;
@@ -52,10 +53,10 @@ export class TetrisScene extends Phaser.Scene {
   }
 
   createInterface() {
-    this.add.text(this.panelX, 18, '俄罗斯方块', {
+    this.add.text(this.panelX, 18, t('game.tetris'), {
       fontFamily: 'Arial Black, Arial', fontSize: '25px', color: '#f4f6ff',
     });
-    this.add.text(this.panelX + 2, 47, 'NEON BLOCKS', {
+    this.add.text(this.panelX + 2, 47, t('game.tetris.sub'), {
       fontFamily: 'Arial', fontSize: '9px', color: '#748ffc', letterSpacing: 2,
     });
     this.boardGlow = this.add.rectangle(
@@ -79,29 +80,29 @@ export class TetrisScene extends Phaser.Scene {
     this.ghostGraphics = this.add.graphics();
     this.pieceGraphics = this.add.graphics();
 
-    this.add.text(this.panelX, 62, '下一个 / NEXT', this.labelStyle());
+    this.add.text(this.panelX, 62, t('tetris.next'), this.labelStyle());
     this.add.rectangle(this.panelX + 140, 137, 280, 118, 0x101427, 0.82)
       .setStrokeStyle(1, 0x343a60, 0.8);
     this.nextGraphics = this.add.graphics();
 
-    this.add.text(this.panelX, 222, '分数 / SCORE', this.labelStyle());
+    this.add.text(this.panelX, 222, t('tetris.score'), this.labelStyle());
     this.scoreText = this.add.text(this.panelX, 246, '000000', {
       fontFamily: 'Arial Black, Arial', fontSize: '40px', color: '#f8f9ff',
     });
 
-    this.add.text(this.panelX, 320, '消除行 / LINES', this.labelStyle());
+    this.add.text(this.panelX, 320, t('tetris.lines'), this.labelStyle());
     this.linesText = this.add.text(this.panelX, 344, '00', this.valueStyle());
-    this.add.text(this.panelX + 142, 320, '等级 / LEVEL', this.labelStyle());
+    this.add.text(this.panelX + 142, 320, t('tetris.level'), this.labelStyle());
     this.levelText = this.add.text(this.panelX + 142, 344, '01', this.valueStyle());
 
     this.add.line(this.panelX + 140, 413, 0, 0, 280, 0, 0x343a60, 0.9);
-    this.add.text(this.panelX, 438, '操作 / CONTROLS', this.labelStyle());
-    this.addControl('←  →', '移动方块', 474);
-    this.addControl('↑ / Z', '旋转方块', 510);
-    this.addControl('↓', '加速下落', 546);
-    this.addControl('SPACE', '直接落下', 582);
-    this.addControl('P', '暂停游戏', 608);
-    this.addControl('ESC', '返回游戏厅', 638);
+    this.add.text(this.panelX, 438, t('tetris.controls'), this.labelStyle());
+    this.addControl('←  →', t('tetris.move'), 474);
+    this.addControl('↑ / Z', t('tetris.rotate'), 510);
+    this.addControl('↓', t('tetris.softDrop'), 546);
+    this.addControl('SPACE', t('tetris.hardDrop'), 582);
+    this.addControl('P', t('tetris.pause'), 608);
+    this.addControl('ESC', t('tetris.home'), 638);
 
     const boardWidth = BOARD_WIDTH * this.cellSize;
     const boardHeight = BOARD_HEIGHT * this.cellSize;
@@ -296,12 +297,12 @@ export class TetrisScene extends Phaser.Scene {
   togglePause() {
     if (this.model.gameOver) return;
     this.isPaused = !this.isPaused;
-    this.setOverlay(this.isPaused, '暂停 / PAUSED', '按 P 或触摸暂停键继续');
+    this.setOverlay(this.isPaused, t('tetris.paused'), t('tetris.resume'));
   }
 
   endGame() {
     soundFX.play('lose');
-    this.setOverlay(true, '游戏结束', `GAME OVER  ·  得分 ${this.model.score}\n按 ENTER 重新开始`);
+    this.setOverlay(true, t('tetris.gameOver'), t('tetris.gameOverHint', { score: this.model.score }));
   }
 
   setOverlay(visible, title, hint) {

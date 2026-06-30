@@ -57,6 +57,12 @@ export class TankGame {
     return true;
   }
 
+  addLife(amount = 1) {
+    if (this.finished) return this.lives;
+    this.lives += Math.max(0, amount);
+    return this.lives;
+  }
+
   finish(won) {
     if (this.finished) return false;
     this.finished = true;

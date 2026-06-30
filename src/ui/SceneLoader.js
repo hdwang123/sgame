@@ -1,7 +1,9 @@
+import { t } from '../i18n.js';
+
 export function showSceneLoader(scene, accent = 0x748ffc) {
   const depth = 1000;
   const backdrop = scene.add.rectangle(430, 340, 860, 680, 0x090b15).setDepth(depth);
-  const title = scene.add.text(430, 304, '正在加载 / LOADING  0%', {
+  const title = scene.add.text(430, 304, t('loader.loading', { percent: 0 }), {
     fontFamily: 'Arial Black, Arial',
     fontSize: '20px',
     color: '#f1f3ff',
@@ -17,12 +19,12 @@ export function showSceneLoader(scene, accent = 0x748ffc) {
 
   const update = (progress) => {
     const percent = Math.round(progress * 100);
-    title.setText(`正在加载 / LOADING  ${percent}%`);
+    title.setText(t('loader.loading', { percent }));
     bar.setScale(progress, 1);
   };
   const showError = () => {
     failed = true;
-    title.setText('资源加载失败\n轻触重试 / TAP TO RETRY').setAlign('center').setColor('#ff8787');
+    title.setText(t('loader.error')).setAlign('center').setColor('#ff8787');
     backdrop.setInteractive().once('pointerdown', () => globalThis.location?.reload());
   };
   const cleanup = () => {
@@ -35,4 +37,5 @@ export function showSceneLoader(scene, accent = 0x748ffc) {
   scene.load.on('progress', update);
   scene.load.on('loaderror', showError);
   scene.load.once('complete', cleanup);
+  scene.events.once('shutdown', cleanup);
 }

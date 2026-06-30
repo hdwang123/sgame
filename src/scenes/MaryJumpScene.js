@@ -4,6 +4,7 @@ import { MARY_JUMP_LEVELS, MARY_JUMP_RULES } from '../game/mary-jump/config.js';
 import { soundFX } from '../audio/SoundFX.js';
 import { mobileControls } from '../ui/MobileControls.js';
 import { showSceneLoader } from '../ui/SceneLoader.js';
+import { getLanguage, t } from '../i18n.js';
 
 export class MaryJumpScene extends Phaser.Scene {
   constructor() {
@@ -24,6 +25,7 @@ export class MaryJumpScene extends Phaser.Scene {
     this.levelStartScore = data.score ?? 0;
     this.phase = 'playing';
     this.jumpQueuedUntil = 0;
+    this.queuedJumpSpeed = MARY_JUMP_RULES.jumpSpeed;
     this.lastGroundedAt = Number.NEGATIVE_INFINITY;
     this.model = new MaryJumpGame();
     this.model.score = this.levelStartScore;
@@ -75,13 +77,14 @@ export class MaryJumpScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.goal, () => this.completeLevel());
 
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.keys = this.input.keyboard.addKeys('A,D,W,SPACE');
+    this.keys = this.input.keyboard.addKeys('A,D,W,SPACE,X,SHIFT');
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('menu'));
     this.input.keyboard.on('keydown-ENTER', () => this.handleContinue());
     this.input.keyboard.on('keydown-P', () => this.togglePause());
     this.input.keyboard.on('keydown-R', () => this.restartFromFirstLevel());
     mobileControls.bindScene(this, 'maryJump', {
       primary: () => this.queueJump(),
+      tertiary: () => this.queueJump(true),
       secondary: () => this.restartFromFirstLevel(),
       pause: () => this.togglePause(),
       restart: () => this.restartLevel(),
@@ -89,10 +92,10 @@ export class MaryJumpScene extends Phaser.Scene {
     });
     this.cameras.main.startFollow(this.player, true, 0.09, 0.09, -180, 0);
 
-    this.add.text(24, 17, '玛丽跳跃', {
+    this.add.text(24, 17, t('game.mary'), {
       fontFamily: 'Arial Black', fontSize: '25px', color: '#ffffff',
     }).setScrollFactor(0).setDepth(10);
-    this.add.text(26, 49, 'MARY JUMP', {
+    this.add.text(26, 49, t('game.mary.sub'), {
       fontFamily: 'Arial', fontSize: '9px', color: '#ffd8a8', letterSpacing: 2,
     }).setScrollFactor(0).setDepth(10);
     this.levelText = this.add.text(430, 20, '', {
@@ -101,7 +104,7 @@ export class MaryJumpScene extends Phaser.Scene {
     this.scoreText = this.add.text(830, 25, '', {
       fontFamily: 'Consolas', fontSize: '14px', color: '#ffe8cc',
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(10);
-    this.add.text(24, 62, '方向键 / AD 移动  ·  ↑ / W / SPACE 跳跃  ·  P 暂停  ·  R 从第1关开始  ·  ESC 返回', {
+    this.add.text(24, 62, t('mary.controls'), {
       fontFamily: 'Arial', fontSize: '11px', color: '#a5b4d4',
     }).setScrollFactor(0).setDepth(10);
     this.message = this.add.text(430, 310, '', {
@@ -153,17 +156,22 @@ export class MaryJumpScene extends Phaser.Scene {
 
   update() {
     if (this.phase !== 'playing') return;
-    const left = this.cursors.left.isDown || this.keys.A.isDown || mobileControls.isDown('left');
-    const right = this.cursors.right.isDown || this.keys.D.isDown || mobileControls.isDown('right');
-    if (left) this.player.setVelocityX(-MARY_JUMP_RULES.moveSpeed).setFlipX(true);
-    else if (right) this.player.setVelocityX(MARY_JUMP_RULES.moveSpeed).setFlipX(false);
-    else this.player.setVelocityX(0);
+    const axis = mobileControls.axis();
+    let horizontal = Math.abs(axis.x) >= 0.16 ? axis.x : 0;
+    if (this.cursors.left.isDown || this.keys.A.isDown) horizontal = -1;
+    else if (this.cursors.right.isDown || this.keys.D.isDown) horizontal = 1;
+    if (horizontal) {
+      this.player.setVelocityX(MARY_JUMP_RULES.moveSpeed * horizontal).setFlipX(horizontal < 0);
+    } else this.player.setVelocityX(0);
 
     const jump = Phaser.Input.Keyboard.JustDown(this.cursors.up)
       || Phaser.Input.Keyboard.JustDown(this.keys.W)
       || Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
+    const bigJump = Phaser.Input.Keyboard.JustDown(this.keys.X)
+      || Phaser.Input.Keyboard.JustDown(this.keys.SHIFT);
     if (this.player.body.blocked.down) this.lastGroundedAt = this.time.now;
-    if (jump) this.queueJump();
+    if (bigJump) this.queueJump(true);
+    else if (jump) this.queueJump();
     this.consumeQueuedJump();
 
     this.enemies.children.iterate((enemy) => {
@@ -174,12 +182,14 @@ export class MaryJumpScene extends Phaser.Scene {
       enemy.setData('direction', direction).setVelocityX(direction * this.level.enemySpeed);
     });
 
-    if (this.player.y > this.level.height + 40) this.lose('MISSED THE PLATFORM');
+    if (this.player.y > this.level.height + 40) this.lose('mary.missed');
   }
 
-  queueJump() {
+  queueJump(big = false) {
     if (this.phase !== 'playing') return;
     this.jumpQueuedUntil = this.time.now + 160;
+    const speed = big ? MARY_JUMP_RULES.bigJumpSpeed : MARY_JUMP_RULES.jumpSpeed;
+    this.queuedJumpSpeed = Math.max(this.queuedJumpSpeed, speed);
     this.consumeQueuedJump();
   }
 
@@ -190,7 +200,8 @@ export class MaryJumpScene extends Phaser.Scene {
       this.jumpQueuedUntil = 0;
       this.lastGroundedAt = Number.NEGATIVE_INFINITY;
       soundFX.play('jump');
-      this.player.setVelocityY(-MARY_JUMP_RULES.jumpSpeed);
+      this.player.setVelocityY(-this.queuedJumpSpeed);
+      this.queuedJumpSpeed = MARY_JUMP_RULES.jumpSpeed;
     }
   }
 
@@ -209,17 +220,17 @@ export class MaryJumpScene extends Phaser.Scene {
       soundFX.play('stomp');
       this.updateHud();
     } else {
-      this.lose('HIT BY SLIME');
+      this.lose('mary.hit');
     }
   }
 
-  lose(reason = 'TRY AGAIN') {
+  lose(reasonKey = 'mary.failed') {
     if (this.phase !== 'playing') return;
     this.phase = 'lost';
     this.model.finish('lost');
     soundFX.play('hurt');
     this.physics.pause();
-    this.message.setText(`挑战失败\n${reason}\nENTER 重试本关  ·  R 从第1关开始`).setVisible(true);
+    this.message.setText(`${t('mary.failed')}\n${t(reasonKey)}\n${t('mary.retry')}`).setVisible(true);
   }
 
   completeLevel() {
@@ -232,9 +243,10 @@ export class MaryJumpScene extends Phaser.Scene {
     this.model.finish(finalLevel ? 'won' : 'stage-cleared');
     soundFX.play('win');
     if (finalLevel) {
-      this.message.setText(`全部关卡完成！\nALL STAGES CLEAR\n总分 ${this.model.score}\n按 ENTER 重新挑战`).setVisible(true);
+      this.message.setText(`${t('mary.allClear')}\n${t('mary.total', { score: this.model.score })}`).setVisible(true);
     } else {
-      this.message.setText(`第 ${this.levelIndex + 1} 关完成\nSTAGE CLEAR  +${MARY_JUMP_RULES.levelBonus * (this.levelIndex + 1)}\n即将进入下一关…`).setVisible(true);
+      const bonus = MARY_JUMP_RULES.levelBonus * (this.levelIndex + 1);
+      this.message.setText(`${t('mary.stageClear', { stage: this.levelIndex + 1 })}\n${t('mary.next', { bonus })}`).setVisible(true);
       this.time.delayedCall(1200, () => {
         if (this.phase === 'stage-clear') {
           this.scene.restart({ levelIndex: this.levelIndex + 1, score: this.model.score });
@@ -261,7 +273,7 @@ export class MaryJumpScene extends Phaser.Scene {
     if (this.phase === 'playing') {
       this.phase = 'paused';
       this.physics.pause();
-      this.message.setText('游戏暂停\nPAUSED  ·  按 P 或轻触暂停键继续').setVisible(true);
+      this.message.setText(`${t('mary.paused')}\n${t('mary.resume')}`).setVisible(true);
     } else if (this.phase === 'paused') {
       this.phase = 'playing';
       this.physics.resume();
@@ -275,12 +287,14 @@ export class MaryJumpScene extends Phaser.Scene {
   }
 
   updateHud() {
-    this.levelText?.setText(`STAGE ${this.levelIndex + 1}/${MARY_JUMP_LEVELS.length}  ·  ${this.level.name}`);
-    this.scoreText?.setText(`分数 / SCORE  ${String(this.model.score).padStart(4, '0')}`);
+    const levelName = getLanguage() === 'zh' ? this.level.name : this.level.subtitle;
+    this.levelText?.setText(`${t('global.stage')} ${this.levelIndex + 1}/${MARY_JUMP_LEVELS.length}  ·  ${levelName}`);
+    this.scoreText?.setText(`${t('mary.score')}  ${String(this.model.score).padStart(4, '0')}`);
   }
 
   showStageIntro() {
-    const intro = this.add.text(430, 220, `STAGE ${this.levelIndex + 1}\n${this.level.name}\n${this.level.subtitle}`, {
+    const levelName = getLanguage() === 'zh' ? this.level.name : this.level.subtitle;
+    const intro = this.add.text(430, 220, `${t('global.stage')} ${this.levelIndex + 1}\n${levelName}`, {
       fontFamily: 'Arial Black', fontSize: '24px', color: '#ffffff', align: 'center',
       backgroundColor: '#080b14cc', padding: { x: 28, y: 18 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(15);

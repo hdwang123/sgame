@@ -60,6 +60,8 @@ tank.addStageBonus(500);
 assert.equal(tank.score, 900);
 tank.hitPlayer();
 assert.equal(tank.lives, 2);
+tank.addLife();
+assert.equal(tank.lives, 3);
 for (const [x, y] of ENEMY_SPAWNS) {
   assert.ok(x >= TANK_ARENA.x + 22 && x <= TANK_ARENA.x + TANK_ARENA.width - 22);
   assert.ok(y >= TANK_ARENA.y + 21 && y <= TANK_ARENA.y + TANK_ARENA.height - 21);
@@ -70,6 +72,9 @@ assert.equal(TANK_LEVELS.length, 10);
 TANK_LEVELS.forEach((level) => {
   assert.ok(level.walls.length > 0);
   assert.ok(level.breakableWalls.length >= 4);
+  assert.ok(level.breakableWalls.some(([x, y, width]) => (
+    x === level.base[0] && y < level.base[1] && width >= 100
+  )));
   assert.ok(level.enemySpawns.length > 0);
   assert.ok(level.enemySpeed > 0);
   [...level.enemySpawns, level.playerSpawn, level.base].forEach(([x, y]) => {
