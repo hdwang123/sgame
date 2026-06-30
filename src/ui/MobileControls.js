@@ -6,10 +6,12 @@ const PROFILES = {
   },
   tetris: {
     controls: ['left', 'right', 'down', 'primary', 'secondary', 'pause', 'restart', 'home'],
+    joystick: true,
     labels: { primary: ['↻', 'touch.rotate'], secondary: ['⇣', 'touch.drop'] },
   },
   snake: {
     controls: ['up', 'left', 'down', 'right', 'pause', 'restart', 'home', 'speed-slow', 'speed-normal', 'speed-fast'],
+    joystick: true,
     selected: 'speed-normal',
   },
   maryJump: {
@@ -188,6 +190,10 @@ class MobileControls {
       x: (this.pressed.has('right') ? 1 : 0) - (this.pressed.has('left') ? 1 : 0),
       y: (this.pressed.has('down') ? 1 : 0) - (this.pressed.has('up') ? 1 : 0),
     };
+  }
+
+  isUsingJoystick() {
+    return this.movementMode === 'joystick' && this.root.classList.contains('supports-joystick');
   }
 
   select(control) {

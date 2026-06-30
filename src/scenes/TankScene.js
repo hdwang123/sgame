@@ -20,6 +20,10 @@ export class TankScene extends Phaser.Scene {
     super('tank');
   }
 
+  init() {
+    this.scale.resize(860, 680);
+  }
+
   preload() {
   }
 

@@ -11,6 +11,10 @@ export class MaryJumpScene extends Phaser.Scene {
     super('maryJump');
   }
 
+  init() {
+    this.scale.resize(860, 680);
+  }
+
   preload() {
     showSceneLoader(this, 0xff922b);
     const assets = `${import.meta.env.BASE_URL}assets/mary-jump/`;

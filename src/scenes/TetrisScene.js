@@ -34,6 +34,7 @@ export class TetrisScene extends Phaser.Scene {
     this.isPaused = false;
     this.dropAccumulator = 0;
     this.touchMoveAccumulator = 0;
+    this.lastTouchDirection = 0;
 
     this.createBackdrop();
     this.createInterface();
@@ -171,16 +172,22 @@ export class TetrisScene extends Phaser.Scene {
 
   update(_, delta) {
     if (this.isPaused || this.model.gameOver) return;
-    const touchDirection = mobileControls.isDown('left') ? -1 : mobileControls.isDown('right') ? 1 : 0;
+    const touchAxis = mobileControls.axis();
+    const touchDirection = touchAxis.x < -0.35 ? -1 : touchAxis.x > 0.35 ? 1 : 0;
     if (touchDirection) {
+      if (mobileControls.isUsingJoystick() && touchDirection !== this.lastTouchDirection) {
+        this.move(touchDirection);
+        this.touchMoveAccumulator = 0;
+      }
       this.touchMoveAccumulator += delta;
       if (this.touchMoveAccumulator >= 110) {
         this.move(touchDirection);
         this.touchMoveAccumulator = 0;
       }
     } else this.touchMoveAccumulator = 0;
+    this.lastTouchDirection = touchDirection;
     this.dropAccumulator += delta;
-    const softDropping = this.cursors.down.isDown || mobileControls.isDown('down');
+    const softDropping = this.cursors.down.isDown || touchAxis.y > 0.35;
     if (this.dropAccumulator >= (softDropping ? 45 : this.model.dropInterval)) {
       const result = this.model.tick(softDropping);
       this.handleModelResult(result);

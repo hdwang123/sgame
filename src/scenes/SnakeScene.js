@@ -16,11 +16,16 @@ export class SnakeScene extends Phaser.Scene {
     super('snake');
   }
 
+  init() {
+    this.scale.resize(860, 680);
+  }
+
   create() {
     this.model = new SnakeGame({ columns: COLS, rows: ROWS });
     this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
     this.stepTimer = 0;
     this.paused = false;
+    this.joystickDirection = '';
     this.drawFrame();
     this.snakeGraphics = this.add.graphics();
     this.bindKeys();
@@ -112,11 +117,31 @@ export class SnakeScene extends Phaser.Scene {
 
   update(_, delta) {
     if (this.model.gameOver || this.paused) return;
+    this.updateJoystickDirection();
     this.stepTimer += delta;
     if (this.stepTimer >= this.model.speed) {
       this.stepTimer = 0;
       this.step();
     }
+  }
+
+  updateJoystickDirection() {
+    if (!mobileControls.isUsingJoystick()) return;
+    const axis = mobileControls.axis();
+    if (Math.hypot(axis.x, axis.y) < 0.42) {
+      this.joystickDirection = '';
+      return;
+    }
+    const horizontal = Math.abs(axis.x) >= Math.abs(axis.y);
+    const direction = horizontal
+      ? (axis.x < 0 ? 'left' : 'right')
+      : (axis.y < 0 ? 'up' : 'down');
+    if (direction === this.joystickDirection) return;
+    this.joystickDirection = direction;
+    const vectors = {
+      left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1],
+    };
+    this.model.turn(...vectors[direction]);
   }
 
   step() {
