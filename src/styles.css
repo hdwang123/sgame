@@ -109,6 +109,7 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
 }
 .touch-speed-selector,
 .touch-mode-selector,
+.touch-landscape-toggle,
 .touch-joystick { display: none; }
 
 @media (pointer: coarse), (max-width: 800px) {
@@ -173,6 +174,18 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     border-radius: 16px;
     font: 10px 'Chakra Petch', sans-serif;
   }
+  .touch-controls.supports-landscape .touch-landscape-toggle {
+    display: grid;
+    grid-template-columns: auto auto;
+    place-content: center;
+    gap: 4px;
+    min-width: 64px;
+    height: 30px;
+    padding: 0 9px;
+    border-radius: 16px;
+    font: 10px 'Chakra Petch', sans-serif;
+  }
+  .touch-landscape-toggle strong { font-size: 14px; }
   .touch-controls.supports-joystick[data-movement-mode="joystick"] .touch-dpad { display: none; }
   .touch-controls.supports-joystick[data-movement-mode="joystick"] .touch-joystick {
     display: block;
@@ -218,12 +231,23 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     will-change: transform;
   }
   .touch-controls[data-profile="menu"] .touch-controls__body { display: none; }
-  .touch-dpad { display: grid; grid-template: repeat(3, 58px) / repeat(3, 58px); gap: 6px; }
-  .touch-dpad button { width: 58px; height: 58px; border-radius: 16px; font-size: 23px; }
+  .touch-dpad { display: grid; grid-template: repeat(3, 54px) / repeat(3, 54px); gap: 0; }
+  .touch-dpad button { width: 54px; height: 54px; border-radius: 12px; font-size: 23px; }
   .touch-dpad [data-control="up"] { grid-area: 1 / 2; }
   .touch-dpad [data-control="left"] { grid-area: 2 / 1; }
   .touch-dpad [data-control="down"] { grid-area: 3 / 2; }
   .touch-dpad [data-control="right"] { grid-area: 2 / 3; }
+  body:is([data-game-profile="snake"], [data-game-profile="tank"])
+    .touch-controls[data-movement-mode="buttons"] .touch-dpad::before {
+    content: '';
+    z-index: 0;
+    grid-area: 2 / 2;
+    border: 1px solid #39466f;
+    background: linear-gradient(145deg, #283253, #171c32);
+    pointer-events: none;
+  }
+  body:is([data-game-profile="snake"], [data-game-profile="tank"])
+    .touch-controls[data-movement-mode="buttons"] .touch-dpad button { z-index: 1; }
   .touch-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; max-width: 190px; }
   .touch-actions button { width: 82px; height: 82px; border-radius: 50%; display: grid; place-content: center; gap: 4px; }
   .touch-actions button strong { font-size: 23px; line-height: 1; }
@@ -351,7 +375,7 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   footer { font-size: 8px; }
 
   .touch-controls {
-    --dpad-size: clamp(50px, 14vw, 58px);
+    --dpad-size: clamp(48px, 13vw, 54px);
     --action-size: clamp(72px, 19vw, 82px);
     --small-action-size: clamp(50px, 14vw, 56px);
     padding: 9px 9px 12px;
@@ -365,7 +389,7 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   .touch-dpad button {
     width: var(--dpad-size);
     height: var(--dpad-size);
-    border-radius: 14px;
+    border-radius: 12px;
     font-size: 22px;
   }
   .touch-actions {
@@ -404,10 +428,10 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     height: 136px;
   }
   body[data-game-profile="maryJump"] .touch-dpad {
-    grid-template: 62px / repeat(2, 62px);
-    gap: 8px;
+    grid-template: 58px / repeat(2, 58px);
+    gap: 2px;
   }
-  body[data-game-profile="maryJump"] .touch-dpad button { width: 62px; height: 62px; }
+  body[data-game-profile="maryJump"] .touch-dpad button { width: 58px; height: 58px; }
   body[data-game-profile="maryJump"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
   body[data-game-profile="maryJump"] .touch-dpad [data-control="right"] { grid-area: 1 / 2; }
   body[data-game-profile="tank"] .touch-actions {
@@ -472,4 +496,771 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
     max-width: var(--action-size);
     gap: 6px;
   }
+}
+
+/* Mobile landscape overlay. Tetris intentionally keeps its portrait controls. */
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 600px) {
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) {
+    width: 100vw;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .app-shell {
+    width: 100vw;
+    height: 100dvh;
+    padding: 0;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .game-card {
+    width: min(100vw, 126.4706dvh);
+    height: 100dvh;
+    margin: 0 auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body:is(
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .game-card {
+    width: min(100vw, 91.1765dvh);
+    height: 100dvh;
+    margin: 0 auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) #game-container {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-controls {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    pointer-events: none;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-controls button {
+    border-color: rgba(180, 205, 255, .46);
+    background: rgba(13, 19, 35, .2);
+    box-shadow: inset 0 1px rgba(255, 255, 255, .12);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    pointer-events: auto;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-controls button:is(.is-pressed, :active) {
+    background: rgba(54, 84, 139, .8);
+  }
+
+  body[data-landscape-profile="snake"] .touch-speed-selector button.is-selected {
+    border-color: #63e6be;
+    color: #e6fff8;
+    background: rgba(35, 108, 98, .62);
+    box-shadow: 0 0 14px rgba(99, 230, 190, .42), inset 0 1px rgba(255, 255, 255, .18);
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-controls__head {
+    position: fixed;
+    inset: max(5px, env(safe-area-inset-top, 0px)) max(7px, env(safe-area-inset-right, 0px)) auto auto;
+    z-index: 54;
+    width: auto;
+    min-height: 0;
+    pointer-events: none;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-indicator {
+    display: none;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-mode-selector {
+    position: fixed;
+    top: max(5px, env(safe-area-inset-top, 0px));
+    left: max(
+      7px,
+      calc((100vw - min(100vw, 126.4706dvh)) / 2 - 80px)
+    );
+    z-index: 55;
+    gap: 0;
+    margin: 0;
+    pointer-events: auto;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-landscape-toggle {
+    display: grid;
+    height: 32px;
+    min-width: 58px;
+    margin-left: 4px;
+    pointer-events: auto;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-mode-selector button {
+    min-width: 72px;
+    height: 32px;
+    padding: 0 7px;
+    border-radius: 16px;
+    font-size: 9px;
+  }
+
+  body[data-landscape-profile="snake"] .touch-speed-selector {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 43px);
+    right: auto;
+    left: max(7px, env(safe-area-inset-left, 0px));
+    z-index: 54;
+    gap: 4px;
+    margin: 0;
+    pointer-events: auto;
+  }
+
+  body[data-landscape-profile="snake"] .touch-speed-selector span { display: none; }
+  body[data-landscape-profile="snake"] .touch-speed-selector button {
+    min-width: 46px;
+    height: 32px;
+    padding: 0 7px;
+    border-radius: 16px;
+    font-size: 9px;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-controls__body {
+    position: fixed;
+    inset: 0;
+    min-height: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-controls.supports-joystick[data-movement-mode="joystick"] .touch-joystick {
+    position: fixed;
+    top: auto;
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    display: block;
+    width: clamp(112px, 35vh, 142px);
+    height: clamp(112px, 35vh, 142px);
+    transform: none;
+    pointer-events: auto;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-joystick__ring {
+    border-color: rgba(116, 192, 252, .2);
+    background:
+      radial-gradient(circle, rgba(57, 76, 118, .2) 0 29%, transparent 30%),
+      rgba(13, 19, 35, .2);
+    box-shadow: inset 0 0 22px rgba(0, 0, 0, .22);
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-joystick__knob {
+    background: rgba(32, 47, 87, .2);
+    box-shadow: none;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-joystick:active .touch-joystick__knob {
+    background: rgba(54, 84, 139, .8);
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-controls[data-movement-mode="buttons"] .touch-dpad {
+    position: fixed;
+    top: auto;
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    grid-template: repeat(3, var(--landscape-dpad)) / repeat(3, var(--landscape-dpad));
+    --landscape-dpad: clamp(38px, 12vh, 48px);
+    gap: 0;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  body[data-landscape-profile="maryJump"] .touch-controls[data-movement-mode="buttons"] .touch-dpad {
+    grid-template: var(--landscape-dpad) / repeat(2, var(--landscape-dpad));
+    bottom: max(23px, calc(env(safe-area-inset-bottom, 0px) + 13px));
+  }
+  body[data-landscape-profile="maryJump"] .touch-controls[data-movement-mode="buttons"] .touch-dpad [data-control="left"] {
+    grid-area: 1 / 1;
+  }
+  body[data-landscape-profile="maryJump"] .touch-controls[data-movement-mode="buttons"] .touch-dpad [data-control="right"] {
+    grid-area: 1 / 2;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-controls[data-movement-mode="buttons"] .touch-dpad button {
+    width: var(--landscape-dpad);
+    height: var(--landscape-dpad);
+    border-radius: 10px;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="tank"]
+  ) .touch-controls[data-movement-mode="buttons"] .touch-dpad::before {
+    content: '';
+    z-index: 0;
+    grid-area: 2 / 2;
+    border: 1px solid rgba(180, 205, 255, .32);
+    background: rgba(13, 19, 35, .2);
+    pointer-events: none;
+  }
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="tank"]
+  ) .touch-controls[data-movement-mode="buttons"] .touch-dpad button {
+    z-index: 1;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions {
+    position: fixed;
+    top: auto;
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: auto;
+    max-width: none;
+    transform: none;
+    pointer-events: none;
+  }
+
+  body[data-landscape-profile="tank"] .touch-actions {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(36px, 11vh, 44px));
+  }
+
+  body[data-landscape-profile="maryJump"] .touch-actions {
+    flex-direction: row;
+  }
+
+  body:is(
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="primary"],
+  body[data-landscape-profile="maryJump"] .touch-actions [data-control="fire"] {
+    position: static;
+    grid-area: auto;
+    width: clamp(62px, 19vh, 76px);
+    height: clamp(62px, 19vh, 76px);
+    pointer-events: auto;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="pause"],
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="restart"],
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="home"],
+  body:is(
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-actions [data-control="secondary"] {
+    position: fixed;
+    z-index: 55;
+    grid-area: auto;
+    width: 54px;
+    height: 34px;
+    border-radius: 17px;
+    margin-left: 0;
+    left: auto;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  body .touch-actions [data-control="pause"] {
+    top: calc(env(safe-area-inset-top, 0px) + 43px);
+    right: calc(env(safe-area-inset-right, 0px) + 67px);
+  }
+  body .touch-actions [data-control="restart"] {
+    top: calc(env(safe-area-inset-top, 0px) + 43px);
+    right: calc(env(safe-area-inset-right, 0px) + 7px);
+  }
+  body .touch-actions [data-control="secondary"] {
+    top: calc(env(safe-area-inset-top, 0px) + 83px);
+    right: calc(env(safe-area-inset-right, 0px) + 67px);
+  }
+  body .touch-actions [data-control="home"] {
+    top: calc(env(safe-area-inset-top, 0px) + 83px);
+    right: calc(env(safe-area-inset-right, 0px) + 7px);
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="pause"] strong,
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="restart"] strong,
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="home"] strong,
+  body:is(
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-actions [data-control="secondary"] strong {
+    display: none;
+  }
+
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="pause"] span,
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="restart"] span,
+  body:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"],
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .touch-actions [data-control="home"] span,
+  body:is(
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .touch-actions [data-control="secondary"] span {
+    color: #e7edff;
+    font-size: 9px;
+  }
+
+  body[data-landscape-profile="carrotDefense"] .touch-controls__body,
+  body[data-landscape-profile="linkMatch"] .touch-controls__body {
+    position: fixed;
+    inset: 0;
+    min-height: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+}
+
+/* iOS Safari cannot lock page orientation. Rotate the game shell as a fallback. */
+@media (orientation: portrait) and (pointer: coarse) {
+  body.is-forced-landscape {
+    width: 100vw;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.is-forced-landscape .app-shell {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100dvh;
+    height: 100dvw;
+    padding: 0;
+    transform: rotate(90deg) translateY(-100%);
+    transform-origin: top left;
+  }
+
+  body.is-forced-landscape .brand,
+  body.is-forced-landscape footer {
+    display: none;
+  }
+
+  body.is-forced-landscape:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="maryJump"],
+    [data-landscape-profile="tank"]
+  ) .game-card {
+    width: min(100dvh, 126.4706dvw);
+    height: 100dvw;
+    margin: 0 auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body.is-forced-landscape:is(
+    [data-landscape-profile="carrotDefense"],
+    [data-landscape-profile="linkMatch"]
+  ) .game-card {
+    width: min(100dvh, 91.1765dvw);
+    height: 100dvw;
+    margin: 0 auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body.is-forced-landscape #game-container {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  body.is-forced-landscape .touch-controls {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    pointer-events: none;
+  }
+
+  body.is-forced-landscape .touch-controls button {
+    border-color: rgba(180, 205, 255, .46);
+    background: rgba(13, 19, 35, .2);
+    box-shadow: inset 0 1px rgba(255, 255, 255, .12);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    pointer-events: auto;
+  }
+
+  body.is-forced-landscape .touch-controls button:is(.is-pressed, :active) {
+    background: rgba(54, 84, 139, .8);
+  }
+
+  body.is-forced-landscape[data-landscape-profile="snake"] .touch-speed-selector button.is-selected {
+    border-color: #63e6be;
+    color: #e6fff8;
+    background: rgba(35, 108, 98, .62);
+    box-shadow: 0 0 14px rgba(99, 230, 190, .42), inset 0 1px rgba(255, 255, 255, .18);
+  }
+
+  body.is-forced-landscape .touch-controls__head {
+    position: fixed;
+    top: 5px;
+    right: 7px;
+    left: auto;
+    z-index: 54;
+    width: auto;
+    min-height: 0;
+    pointer-events: none;
+  }
+
+  body.is-forced-landscape .touch-indicator { display: none; }
+  body.is-forced-landscape .touch-mode-selector {
+    position: fixed;
+    top: 5px;
+    left: max(
+      7px,
+      calc((100dvh - min(100dvh, 126.4706dvw)) / 2 - 80px)
+    );
+    z-index: 55;
+    gap: 4px;
+    margin: 0;
+    pointer-events: auto;
+  }
+  body.is-forced-landscape .touch-mode-selector button,
+  body.is-forced-landscape .touch-landscape-toggle {
+    min-width: 48px;
+    height: 32px;
+    padding: 0 7px;
+    border-radius: 16px;
+    font-size: 9px;
+  }
+  body.is-forced-landscape .touch-mode-selector button { min-width: 72px; }
+  body.is-forced-landscape .touch-landscape-toggle {
+    display: grid;
+    margin-left: 4px;
+    pointer-events: auto;
+  }
+
+  body.is-forced-landscape[data-landscape-profile="snake"] .touch-speed-selector {
+    position: fixed;
+    top: 43px;
+    right: auto;
+    left: 7px;
+    z-index: 54;
+    gap: 4px;
+    margin: 0;
+    pointer-events: auto;
+  }
+  body.is-forced-landscape[data-landscape-profile="snake"] .touch-speed-selector span { display: none; }
+  body.is-forced-landscape[data-landscape-profile="snake"] .touch-speed-selector button {
+    min-width: 46px;
+    height: 32px;
+    padding: 0 7px;
+    border-radius: 16px;
+    font-size: 9px;
+  }
+
+  body.is-forced-landscape .touch-controls__body {
+    position: fixed;
+    inset: 0;
+    min-height: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  body.is-forced-landscape .touch-controls.supports-joystick[data-movement-mode="joystick"] .touch-joystick {
+    position: fixed;
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+    display: block;
+    width: clamp(112px, 35dvw, 142px);
+    height: clamp(112px, 35dvw, 142px);
+    transform: none;
+    pointer-events: auto;
+  }
+  body.is-forced-landscape .touch-joystick__ring {
+    border-color: rgba(116, 192, 252, .2);
+    background:
+      radial-gradient(circle, rgba(57, 76, 118, .2) 0 29%, transparent 30%),
+      rgba(13, 19, 35, .2);
+    box-shadow: inset 0 0 22px rgba(0, 0, 0, .22);
+  }
+  body.is-forced-landscape .touch-joystick__knob {
+    background: rgba(32, 47, 87, .2);
+    box-shadow: none;
+  }
+  body.is-forced-landscape .touch-joystick:active .touch-joystick__knob {
+    background: rgba(54, 84, 139, .8);
+  }
+
+  body.is-forced-landscape .touch-controls[data-movement-mode="buttons"] .touch-dpad {
+    position: fixed;
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+    --landscape-dpad: clamp(38px, 12dvw, 48px);
+    grid-template: repeat(3, var(--landscape-dpad)) / repeat(3, var(--landscape-dpad));
+    gap: 0;
+    transform: none;
+    pointer-events: auto;
+  }
+  body.is-forced-landscape[data-landscape-profile="maryJump"] .touch-controls[data-movement-mode="buttons"] .touch-dpad {
+    grid-template: var(--landscape-dpad) / repeat(2, var(--landscape-dpad));
+    bottom: 23px;
+  }
+  body.is-forced-landscape[data-landscape-profile="maryJump"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }
+  body.is-forced-landscape[data-landscape-profile="maryJump"] .touch-dpad [data-control="right"] { grid-area: 1 / 2; }
+  body.is-forced-landscape .touch-controls[data-movement-mode="buttons"] .touch-dpad button {
+    width: var(--landscape-dpad);
+    height: var(--landscape-dpad);
+    border-radius: 10px;
+  }
+  body.is-forced-landscape:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="tank"]
+  ) .touch-controls[data-movement-mode="buttons"] .touch-dpad::before {
+    content: '';
+    z-index: 0;
+    grid-area: 2 / 2;
+    border: 1px solid rgba(180, 205, 255, .32);
+    background: rgba(13, 19, 35, .2);
+    pointer-events: none;
+  }
+  body.is-forced-landscape:is(
+    [data-landscape-profile="snake"],
+    [data-landscape-profile="tank"]
+  ) .touch-controls[data-movement-mode="buttons"] .touch-dpad button { z-index: 1; }
+
+  body.is-forced-landscape .touch-actions {
+    position: fixed;
+    top: auto;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    width: auto;
+    max-width: none;
+    transform: none;
+    pointer-events: none;
+  }
+  body.is-forced-landscape[data-landscape-profile="tank"] .touch-actions {
+    bottom: clamp(36px, 11dvw, 44px);
+  }
+  body.is-forced-landscape[data-landscape-profile="maryJump"] .touch-actions {
+    flex-direction: row;
+  }
+  body.is-forced-landscape .touch-actions [data-control="primary"],
+  body.is-forced-landscape[data-landscape-profile="maryJump"] .touch-actions [data-control="fire"] {
+    position: static;
+    grid-area: auto;
+    width: clamp(62px, 19dvw, 76px);
+    height: clamp(62px, 19dvw, 76px);
+    pointer-events: auto;
+  }
+
+  body.is-forced-landscape .touch-actions :is(
+    [data-control="pause"],
+    [data-control="restart"],
+    [data-control="home"],
+    [data-control="secondary"]
+  ) {
+    position: fixed;
+    z-index: 55;
+    grid-area: auto;
+    width: 54px;
+    height: 34px;
+    border-radius: 17px;
+    margin-left: 0;
+    left: auto;
+    transform: none;
+    pointer-events: auto;
+  }
+  body.is-forced-landscape .touch-actions :is(
+    [data-control="pause"],
+    [data-control="restart"],
+    [data-control="home"],
+    [data-control="secondary"]
+  ) strong { display: none; }
+
+  body.is-forced-landscape .touch-actions [data-control="pause"] { top: 43px; right: 67px; }
+  body.is-forced-landscape .touch-actions [data-control="restart"] { top: 43px; right: 7px; }
+  body.is-forced-landscape .touch-actions [data-control="secondary"] { top: 83px; right: 67px; }
+  body.is-forced-landscape .touch-actions [data-control="home"] { top: 83px; right: 7px; }
 }

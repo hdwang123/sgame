@@ -151,10 +151,10 @@ export class MaryJumpScene extends Phaser.Scene {
       fontFamily: 'Arial', fontSize: '9px', color: '#ffd8a8', letterSpacing: 2,
     }).setScrollFactor(0).setDepth(10);
     this.levelText = this.add.text(430, 20, '', {
-      fontFamily: 'Arial Black', fontSize: '15px', color: '#ffe8cc', align: 'center',
+      fontFamily: 'Arial Black', fontSize: '20px', color: '#ffe8cc', align: 'center',
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(10);
     this.scoreText = this.add.text(830, 25, '', {
-      fontFamily: 'Consolas', fontSize: '14px', color: '#ffe8cc',
+      fontFamily: 'Consolas', fontSize: '20px', color: '#ffe8cc',
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(10);
     this.add.text(24, 62, t('mary.controls'), {
       fontFamily: 'Arial', fontSize: '11px', color: '#a5b4d4',

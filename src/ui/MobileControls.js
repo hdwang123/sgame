@@ -13,20 +13,23 @@ const PROFILES = {
   snake: {
     controls: ['up', 'left', 'down', 'right', 'pause', 'restart', 'home', 'speed-slow', 'speed-normal', 'speed-fast'],
     joystick: true,
-    defaultMovementMode: 'buttons',
+    defaultMovementMode: 'joystick',
     selected: 'speed-normal',
+    landscape: true,
   },
   maryJump: {
     controls: ['left', 'right', 'primary', 'fire', 'secondary', 'pause', 'restart', 'home'],
     joystick: true,
     defaultMovementMode: 'joystick',
     labels: { primary: ['▲', 'touch.jump'], fire: ['●', 'touch.fire'], secondary: ['1', 'touch.first'] },
+    landscape: true,
   },
   tank: {
     controls: ['up', 'left', 'down', 'right', 'primary', 'secondary', 'pause', 'restart', 'home'],
     joystick: true,
     defaultMovementMode: 'joystick',
     labels: { primary: ['●', 'touch.fire'], secondary: ['1', 'touch.first'] },
+    landscape: true,
   },
   carrotDefense: {
     controls: ['pause', 'restart', 'home'],
@@ -49,10 +52,14 @@ class MobileControls {
     this.joystickPointerId = null;
     this.movementMode = 'buttons';
     this.movementModes = new Map();
+    this.movementToggle = this.root.querySelector('[data-movement-toggle]');
     this.currentProfile = 'menu';
+    this.landscapeButton = this.root.querySelector('.touch-landscape-toggle');
+    this.landscapeActive = false;
     this.preventMobileBrowserMenus();
     this.bindButtons();
     this.bindMovementModes();
+    this.bindLandscapeMode();
     this.bindJoystick();
     this.setProfile('menu');
   }
@@ -107,12 +114,75 @@ class MobileControls {
   }
 
   bindMovementModes() {
-    this.root.querySelectorAll('[data-movement-mode]').forEach((button) => {
-      button.addEventListener('pointerdown', (event) => {
-        event.preventDefault();
-        this.setMovementMode(button.dataset.movementMode);
-      });
+    this.movementToggle?.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      this.setMovementMode(this.movementMode === 'joystick' ? 'buttons' : 'joystick');
     });
+  }
+
+  bindLandscapeMode() {
+    // Mobile fullscreen requests are accepted from pointerup more reliably
+    // than pointerdown (notably in Chromium and embedded WebViews).
+    this.landscapeButton?.addEventListener('pointerup', (event) => {
+      event.preventDefault();
+      void this.setLandscapeMode(!this.landscapeActive);
+    });
+    const syncOrientation = () => this.syncLandscapePresentation();
+    globalThis.addEventListener('orientationchange', syncOrientation);
+    globalThis.addEventListener('resize', syncOrientation);
+  }
+
+  async setLandscapeMode(active) {
+    this.landscapeActive = active;
+    document.body.classList.toggle('is-landscape-mode', active);
+    this.syncLandscapePresentation();
+
+    if (active) {
+      try {
+        const root = document.documentElement;
+        const requestFullscreen = root.requestFullscreen ?? root.webkitRequestFullscreen;
+        if (requestFullscreen && !document.fullscreenElement && !document.webkitFullscreenElement) {
+          await requestFullscreen.call(root);
+        }
+        await globalThis.screen?.orientation?.lock?.('landscape');
+      } catch {
+        // iOS Safari does not support locking page orientation; the button still
+        // prepares the landscape layout and asks the player to rotate the phone.
+      }
+      this.syncLandscapePresentation();
+      return;
+    }
+
+    globalThis.screen?.orientation?.unlock?.();
+    try {
+      const exitFullscreen = document.exitFullscreen ?? document.webkitExitFullscreen;
+      if (exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
+        await exitFullscreen.call(document);
+      }
+    } catch {
+      // Leaving fullscreen can be rejected after the browser exits it itself.
+    }
+    this.syncLandscapePresentation();
+  }
+
+  syncLandscapePresentation() {
+    const isLandscape = globalThis.matchMedia?.('(orientation: landscape)').matches;
+    document.body.classList.toggle(
+      'is-forced-landscape',
+      Boolean(this.landscapeActive && !isLandscape),
+    );
+    this.updateLandscapeButton();
+  }
+
+  updateLandscapeButton() {
+    if (!this.landscapeButton) return;
+    const isLandscape = globalThis.matchMedia?.('(orientation: landscape)').matches;
+    const hasLandscapeLayout = isLandscape || document.body.classList.contains('is-forced-landscape');
+    const labelKey = !this.landscapeActive
+      ? 'global.landscape'
+      : (hasLandscapeLayout ? 'global.portrait' : 'global.rotateDevice');
+    this.landscapeButton.querySelector('span').textContent = t(labelKey);
+    this.landscapeButton.setAttribute('aria-pressed', String(this.landscapeActive));
   }
 
   bindJoystick() {
@@ -122,8 +192,13 @@ class MobileControls {
       const bounds = this.joystick.getBoundingClientRect();
       const centerX = bounds.left + bounds.width / 2;
       const centerY = bounds.top + bounds.height / 2;
-      const dx = event.clientX - centerX;
-      const dy = event.clientY - centerY;
+      const pointerDx = event.clientX - centerX;
+      const pointerDy = event.clientY - centerY;
+      // The iOS fallback rotates the whole control surface clockwise. Convert
+      // the physical screen delta back into the joystick's local axes.
+      const forcedLandscape = document.body.classList.contains('is-forced-landscape');
+      const dx = forcedLandscape ? pointerDy : pointerDx;
+      const dy = forcedLandscape ? -pointerDx : pointerDy;
       const distance = Math.hypot(dx, dy);
       const radius = bounds.width * 0.32;
       const scale = distance > radius ? radius / distance : 1;
@@ -156,7 +231,11 @@ class MobileControls {
     this.releaseAll();
     this.root.dataset.profile = name;
     this.root.classList.toggle('supports-joystick', Boolean(profile.joystick));
+    this.root.classList.toggle('supports-landscape', Boolean(profile.landscape));
+    if (this.landscapeButton) this.landscapeButton.hidden = !profile.landscape;
+    if (!profile.landscape && this.landscapeActive) void this.setLandscapeMode(false);
     document.body.dataset.gameProfile = name;
+    document.body.dataset.landscapeProfile = profile.landscape ? name : '';
     const visible = new Set(profile.controls);
     this.buttons.forEach((button, control) => {
       button.classList.remove('is-selected');
@@ -180,9 +259,12 @@ class MobileControls {
       this.movementModes.set(this.currentProfile, this.movementMode);
     }
     this.root.dataset.movementMode = this.movementMode;
-    this.root.querySelectorAll('[data-movement-mode]').forEach((button) => {
-      button.classList.toggle('is-selected', button.dataset.movementMode === this.movementMode);
-    });
+    if (this.movementToggle) {
+      const labelKey = this.movementMode === 'joystick' ? 'global.joystick' : 'global.buttons';
+      this.movementToggle.dataset.i18n = labelKey;
+      this.movementToggle.textContent = t(labelKey);
+      this.movementToggle.setAttribute('aria-label', t(labelKey));
+    }
     this.releaseAll();
   }
 

@@ -43,6 +43,38 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+// iOS Safari cannot lock a web page to landscape. When MobileControls rotates
+// the canvas shell as a fallback, Phaser's default bounds-only conversion no
+// longer knows that X and Y were rotated. Apply the inverse quarter-turn so
+// pointer-driven games (Carrot Defense and Link Match) still hit correctly.
+const transformPointerNormally = game.input.transformPointer.bind(game.input);
+game.input.transformPointer = (pointer, pageX, pageY, wasMove) => {
+  if (!document.body.classList.contains('is-forced-landscape')) {
+    transformPointerNormally(pointer, pageX, pageY, wasMove);
+    return;
+  }
+
+  const bounds = game.canvas.getBoundingClientRect();
+  const clientX = pageX - globalThis.scrollX;
+  const clientY = pageY - globalThis.scrollY;
+  const x = (clientY - bounds.top) * (game.scale.gameSize.width / bounds.height);
+  const y = (bounds.right - clientX) * (game.scale.gameSize.height / bounds.width);
+  const current = pointer.position;
+  const previous = pointer.prevPosition;
+  previous.x = current.x;
+  previous.y = current.y;
+
+  const smoothing = pointer.smoothFactor;
+  if (!wasMove || smoothing === 0) {
+    current.x = x;
+    current.y = y;
+  } else {
+    current.x = x * smoothing + previous.x * (1 - smoothing);
+    current.y = y * smoothing + previous.y * (1 - smoothing);
+  }
+};
+
 document.documentElement.dataset.renderer = isMobileBrowser ? 'canvas' : 'auto';
 
 export { game };

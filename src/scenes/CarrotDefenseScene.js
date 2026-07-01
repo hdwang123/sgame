@@ -153,7 +153,7 @@ export class CarrotDefenseScene extends Phaser.Scene {
       fontFamily: 'Consolas', fontSize: '10px', color: '#74c69d', letterSpacing: 2,
     }).setDepth(21);
     this.hud = this.add.text(this.scale.width - 30, 20, '', {
-      fontFamily: 'Consolas', fontSize: '15px', color: '#fff3bf', align: 'right',
+      fontFamily: 'Consolas', fontSize: '20px', color: '#fff3bf', align: 'right',
     }).setOrigin(1, 0).setDepth(21);
     this.hint = this.add.text(this.scale.width / 2, 650, t('carrot.controls'), {
       fontFamily: 'Arial', fontSize: '12px', color: '#e9fac8',

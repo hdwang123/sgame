@@ -88,7 +88,7 @@ export class TetrisScene extends Phaser.Scene {
 
     this.add.text(this.panelX, 222, t('tetris.score'), this.labelStyle());
     this.scoreText = this.add.text(this.panelX, 246, '000000', {
-      fontFamily: 'Arial Black, Arial', fontSize: '40px', color: '#f8f9ff',
+      fontFamily: 'Arial Black, Arial', fontSize: '44px', color: '#f8f9ff',
     });
 
     this.add.text(this.panelX, 320, t('tetris.lines'), this.labelStyle());
@@ -129,7 +129,7 @@ export class TetrisScene extends Phaser.Scene {
   }
 
   valueStyle() {
-    return { fontFamily: 'Arial Black, Arial', fontSize: '28px', color: '#e9ecff' };
+    return { fontFamily: 'Arial Black, Arial', fontSize: '32px', color: '#e9ecff' };
   }
 
   addControl(key, action, y) {

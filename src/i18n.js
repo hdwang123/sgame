@@ -2,6 +2,7 @@ const translations = {
   zh: {
     'global.brand': '小游戏厅', 'global.touch': '触控模式 / TOUCH',
     'global.buttons': '方向键', 'global.joystick': '摇杆', 'global.speed': '速度',
+    'global.landscape': '横屏', 'global.portrait': '竖屏', 'global.rotateDevice': '请旋转',
     'global.slow': '慢速', 'global.normal': '标准', 'global.fast': '快速',
     'global.action': '操作', 'global.pause': '暂停', 'global.restart': '重开', 'global.home': '返回',
     'global.footer': '六款游戏 · 纯 JavaScript · Phaser 3', 'global.ready': '系统就绪', 'global.stage': '关卡',
@@ -58,6 +59,7 @@ const translations = {
   en: {
     'global.brand': 'ARCADE', 'global.touch': 'TOUCH CONTROLS',
     'global.buttons': 'D-PAD', 'global.joystick': 'JOYSTICK', 'global.speed': 'SPEED',
+    'global.landscape': 'LANDSCAPE', 'global.portrait': 'PORTRAIT', 'global.rotateDevice': 'ROTATE',
     'global.slow': 'SLOW', 'global.normal': 'NORMAL', 'global.fast': 'FAST',
     'global.action': 'ACTION', 'global.pause': 'PAUSE', 'global.restart': 'RESTART', 'global.home': 'BACK',
     'global.footer': '6 GAMES · PURE JAVASCRIPT · PHASER 3', 'global.ready': 'READY', 'global.stage': 'STAGE',

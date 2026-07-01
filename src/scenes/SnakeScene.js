@@ -43,7 +43,7 @@ export class SnakeScene extends Phaser.Scene {
     for (let y = 0; y <= ROWS; y += 1) grid.lineBetween(ORIGIN_X, ORIGIN_Y + y * CELL, ORIGIN_X + COLS * CELL, ORIGIN_Y + y * CELL);
     this.add.text(80, 37, t('game.snake'), { fontFamily: 'Arial Black', fontSize: '28px', color: '#69db7c' });
     this.add.text(82, 72, t('game.snake.sub'), { fontFamily: 'Arial', fontSize: '10px', color: '#688176', letterSpacing: 2 });
-    this.scoreText = this.add.text(780, 50, `${t('snake.score')}  000`, { fontFamily: 'Consolas', fontSize: '15px', color: '#d3f9d8' }).setOrigin(1, 0);
+    this.scoreText = this.add.text(780, 47, `${t('snake.score')}  000`, { fontFamily: 'Consolas', fontSize: '20px', color: '#d3f9d8' }).setOrigin(1, 0);
     this.add.text(80, 640, t('snake.controls'), { fontFamily: 'Arial', fontSize: '12px', color: '#64708f' });
     this.speedButtons = new Map();
     if (!this.isMobileLayout) {

@@ -23,9 +23,11 @@
         <div class="touch-controls__head">
           <span class="touch-indicator"><b></b><span data-i18n="global.touch">触控模式 / TOUCH</span></span>
           <div class="touch-mode-selector" aria-label="移动控制模式">
-            <button type="button" data-movement-mode="buttons" data-i18n="global.buttons">方向键</button>
-            <button type="button" data-movement-mode="joystick" data-i18n="global.joystick">摇杆</button>
+            <button type="button" data-movement-toggle data-i18n="global.joystick">摇杆</button>
           </div>
+          <button type="button" class="touch-landscape-toggle" aria-label="切换横屏" aria-pressed="false">
+            <strong aria-hidden="true">↔</strong><span data-i18n="global.landscape">横屏</span>
+          </button>
         </div>
         <div class="touch-speed-selector" aria-label="贪吃蛇速度选择">
           <span data-i18n="global.speed">速度</span>

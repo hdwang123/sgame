@@ -133,13 +133,13 @@ export class TankScene extends Phaser.Scene {
       fontFamily: 'Arial', fontSize: '9px', color: '#698c84', letterSpacing: 2,
     });
     this.levelText = this.add.text(430, 18, '', {
-      fontFamily: 'Arial Black', fontSize: '15px', color: '#b2f2bb', align: 'center',
+      fontFamily: 'Arial Black', fontSize: '20px', color: '#b2f2bb', align: 'center',
     }).setOrigin(0.5, 0);
     this.hud = this.add.text(830, 22, '', {
-      fontFamily: 'Consolas', fontSize: '14px', color: '#d3f9d8',
+      fontFamily: 'Consolas', fontSize: '20px', color: '#d3f9d8',
     }).setOrigin(1, 0);
     this.powerStatusText = this.add.text(830, 43, '', {
-      fontFamily: 'Consolas', fontSize: '11px', color: '#ffe8a3',
+      fontFamily: 'Consolas', fontSize: '14px', color: '#ffe8a3',
     }).setOrigin(1, 0).setDepth(10);
     this.add.text(30, 655, t('tank.controls'), {
       fontFamily: 'Arial', fontSize: '11px', color: '#66728b',

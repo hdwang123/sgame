@@ -84,7 +84,7 @@ export class LinkMatchScene extends Phaser.Scene {
       fontFamily: 'Consolas', fontSize: '10px', color: '#5c9e91', letterSpacing: 2,
     });
     this.hud = this.add.text(this.scale.width - 30, 20, '', {
-      fontFamily: 'Consolas', fontSize: '15px', color: '#d3f9d8', align: 'right',
+      fontFamily: 'Consolas', fontSize: '20px', color: '#d3f9d8', align: 'right',
     }).setOrigin(1, 0);
     const shuffleX = this.scale.width - 125;
     const shuffleButton = this.add.rectangle(shuffleX, 67, 150, 30, 0x174d43, 0.95)
