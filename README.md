@@ -67,7 +67,7 @@ src/
 %%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
 flowchart TB
   START["进入 TetrisScene"] --> INIT["创建 TetrisGame<br/>初始化 10×20 棋盘与七袋随机方块"]
-  INIT --> SPAWN["生成当前方块<br/>同时准备下一个方块"]
+  INIT --> SPAWN["生成当前方块并准备下一个方块<br/>手机端默认方向按键，可切换摇杆"]
   SPAWN --> COLLIDE_SPAWN{"出生位置发生碰撞？"}
   COLLIDE_SPAWN -->|"是"| GAME_OVER["游戏结束<br/>显示得分与重新开始提示"]
   COLLIDE_SPAWN -->|"否"| DRAW["绘制棋盘、活动方块、幽灵落点<br/>下一个方块、分数、行数和等级"]
@@ -75,11 +75,11 @@ flowchart TB
   DRAW --> LOOP["Phaser update 循环"]
   LOOP --> STATE{"暂停或游戏结束？"}
   STATE -->|"是"| WAIT["停止自动下落<br/>等待继续、重开或返回"]
-  STATE -->|"否"| INPUT{"键盘 / 触屏输入"}
+  STATE -->|"否"| INPUT{"键盘 / 触屏按键 / 摇杆输入"}
 
-  INPUT -->|"左右"| MOVE["尝试水平移动"]
+  INPUT -->|"按键或摇杆左右"| MOVE["尝试水平移动<br/>按住时连续横移"]
   INPUT -->|"上 / Z / 旋转"| ROTATE["旋转矩阵<br/>尝试左右踢墙修正"]
-  INPUT -->|"下 / 软降"| SOFT["缩短下落间隔<br/>每格增加分数"]
+  INPUT -->|"下键或摇杆向下"| SOFT["缩短下落间隔<br/>每格增加分数"]
   INPUT -->|"Space / 直落"| HARD["移动到幽灵落点<br/>按距离增加分数"]
   INPUT -->|"无操作"| TIMER["累计自动下落时间"]
 
@@ -111,17 +111,21 @@ flowchart TB
 %%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
 flowchart TB
   START["进入 MaryJumpScene"] --> LEVEL["读取当前关卡配置<br/>尺寸、重力、平台、金币、敌人和终点"]
-  LEVEL --> WORLD["创建 Arcade Physics 世界<br/>生成角色、平台、金币、敌人和终点旗帜"]
+  LEVEL --> WORLD["创建 Arcade Physics 世界<br/>生成角色、平台、金币、蘑菇、火焰花、敌人与终点"]
   WORLD --> INTRO["显示关卡介绍<br/>开始跟随角色的摄像机"]
   INTRO --> LOOP["Phaser update 循环"]
 
   LOOP --> PHASE{"当前状态是 playing？"}
   PHASE -->|"否"| WAIT["等待继续、重试或返回"]
-  PHASE -->|"是"| INPUT["读取键盘 / 触屏输入"]
+  PHASE -->|"是"| INPUT["读取键盘 / 触屏按键 / 摇杆输入"]
   INPUT --> HORIZONTAL{"左 / 右 / 无方向"}
   HORIZONTAL -->|"左或右"| RUN["设置水平速度与角色朝向"]
   HORIZONTAL -->|"无方向"| STOP["水平速度归零"]
   INPUT --> JUMP{"收到跳跃输入？"}
+  INPUT -->|"F / 手机 B"| FIRE_READY{"当前为火焰状态<br/>且发射冷却结束？"}
+  FIRE_READY -->|"是"| FIREBALL["朝角色面向方向生成火球"]
+  FIRE_READY -->|"否"| PHYSICS
+  FIREBALL --> PHYSICS
   JUMP -->|"是"| BUFFER["记录 160ms 跳跃缓冲"]
   BUFFER --> GROUNDED{"角色着地<br/>或仍在 110ms 土狼时间内？"}
   GROUNDED -->|"是"| TAKEOFF["施加向上的跳跃速度"]
@@ -133,24 +137,33 @@ flowchart TB
 
   PHYSICS --> EVENT{"本帧发生什么？"}
   EVENT -->|"收集金币"| COIN["销毁金币<br/>增加分数并更新 HUD"]
+  EVENT -->|"吃到蘑菇"| MUSHROOM["玛丽变大并增加分数<br/>可抵挡一次普通碰撞"]
+  EVENT -->|"吃到火焰花"| FLOWER["进入火焰状态并增加分数<br/>解锁火球发射"]
+  EVENT -->|"火球命中敌人"| FIRE_HIT["销毁火球与敌人<br/>增加击敌分数"]
   EVENT -->|"碰到敌人"| STOMP{"角色正在下落且位于敌人上方？"}
   STOMP -->|"是"| DEFEAT["消灭敌人、反弹<br/>增加分数"]
-  STOMP -->|"否"| LOSE["挑战失败<br/>暂停物理世界"]
+  STOMP -->|"否"| POWERED{"处于变大或火焰状态？"}
+  POWERED -->|"是"| SHRINK["恢复小玛丽<br/>获得 1.2 秒受击保护"]
+  POWERED -->|"否"| LOSE["挑战失败<br/>暂停物理世界"]
   EVENT -->|"掉出地图"| LOSE
   EVENT -->|"碰到终点旗帜"| COMPLETE["关卡完成<br/>增加通关奖励"]
   EVENT -->|"无事件"| ENEMY["敌人在巡逻边界或撞墙时掉头"]
 
   COIN --> ENEMY
+  MUSHROOM --> ENEMY
+  FLOWER --> ENEMY
+  FIRE_HIT --> ENEMY
+  SHRINK --> ENEMY
   DEFEAT --> ENEMY
   ENEMY --> LOOP
   LOSE --> WAIT
   COMPLETE --> FINAL{"是否为最后一关？"}
-  FINAL -->|"否"| NEXT["短暂显示过关提示<br/>携带分数进入下一关"]
+  FINAL -->|"否"| NEXT["短暂显示过关提示<br/>携带分数与能力状态进入下一关"]
   FINAL -->|"是"| ALL_CLEAR["显示全部通关与总分"]
   NEXT --> LEVEL
   ALL_CLEAR --> WAIT
 
-  WAIT -->|"Enter / 重试"| RETRY["从本关起点恢复本关初始分数"]
+  WAIT -->|"Enter / 重试"| RETRY["从本关起点恢复<br/>本关初始分数与能力状态"]
   WAIT -->|"R / 第1关"| FIRST["分数归零并从第 1 关开始"]
   WAIT -->|"ESC / 返回"| MENU["回到游戏厅"]
   RETRY --> LEVEL
@@ -163,13 +176,13 @@ flowchart TB
 %%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
 flowchart TB
   START["进入 SnakeScene"] --> INIT["创建 SnakeGame<br/>在棋盘中央生成蛇身、方向和食物"]
-  INIT --> SPEED["设置标准速度<br/>绘制棋盘、蛇、食物和分数"]
+  INIT --> SPEED["设置标准速度并默认使用方向按键<br/>绘制棋盘、蛇、食物和分数"]
   SPEED --> LOOP["Phaser update 循环"]
 
   LOOP --> STATE{"游戏结束或暂停？"}
   STATE -->|"是"| WAIT["停止步进<br/>等待继续、重开或返回"]
-  STATE -->|"否"| INPUT{"键盘 / 触屏输入"}
-  INPUT -->|"方向键 / WASD"| TURN["记录下一移动方向<br/>拒绝直接反向"]
+  STATE -->|"否"| INPUT{"键盘 / 触屏按键 / 摇杆输入"}
+  INPUT -->|"方向键 / WASD / 摇杆主方向"| TURN["记录下一移动方向<br/>拒绝直接反向"]
   INPUT -->|"慢速 / 标准 / 快速"| SET_SPEED["切换基础步进间隔<br/>重置本轮计时"]
   INPUT -->|"P / 暂停"| PAUSE["切换暂停状态并显示提示"]
   INPUT -->|"无操作"| TIMER["累计步进时间"]
@@ -204,7 +217,7 @@ flowchart TB
 flowchart TB
   START["进入 TankScene"] --> LEVEL["读取当前战区配置<br/>地图、墙体、基地、出生点和敌军参数"]
   LEVEL --> INIT["创建 TankGame<br/>恢复本关起始分数与生命"]
-  INIT --> WORLD["创建 Arcade Physics 战场<br/>生成基地、玩家、敌军和子弹组"]
+  INIT --> WORLD["创建 Arcade Physics 战场<br/>生成基地、玩家、普通/红色敌军、子弹与道具组"]
   WORLD --> SHIELD["玩家出生并开启短暂无敌护盾"]
   SHIELD --> LOOP["Phaser update 循环"]
 
@@ -212,8 +225,8 @@ flowchart TB
   PHASE -->|"否"| WAIT["等待重试、从第1关开始或返回"]
   PHASE -->|"是"| PLAYER{"玩家是否正在等待重生？"}
   PLAYER -->|"是"| ENEMY_AI["跳过玩家输入<br/>更新敌军行为"]
-  PLAYER -->|"否"| INPUT["读取键盘 / 触屏输入"]
-  INPUT -->|"方向键 / WASD"| MOVE["设置单方向速度与坦克朝向"]
+  PLAYER -->|"否"| INPUT["读取键盘 / 触屏按键 / 摇杆输入"]
+  INPUT -->|"方向键 / WASD / 摇杆主方向"| MOVE["设置单方向速度与坦克朝向"]
   INPUT -->|"Space / 开火"| COOLDOWN{"射击冷却结束？"}
   COOLDOWN -->|"是"| SHOOT["从炮口生成玩家子弹"]
   COOLDOWN -->|"否"| ENEMY_AI
@@ -225,8 +238,14 @@ flowchart TB
   ENEMY_SHOOT --> PHYSICS["物理引擎更新坦克、子弹与碰撞"]
   PHYSICS --> EVENT{"发生哪类碰撞？"}
 
+  EVENT -->|"我方与敌方坦克接触"| TANK_BLOCK["刚性碰撞并阻挡移动<br/>敌方坦克不可被我方推动"]
+  TANK_BLOCK --> LOOP
   EVENT -->|"玩家子弹命中敌军"| HIT_ENEMY["销毁敌军与子弹<br/>播放爆炸并增加分数"]
-  HIT_ENEMY --> REMAIN{"本关仍有敌军？"}
+  HIT_ENEMY --> BONUS_TANK{"是否为红色奖励坦克？"}
+  BONUS_TANK -->|"是"| DROP["随机掉落道具<br/>冻结、全歼、无敌、生命或基地钢墙"]
+  BONUS_TANK -->|"否"| REMAIN{"本关仍有敌军？"}
+  DROP --> COLLECT["玩家拾取并立即应用道具效果"]
+  COLLECT --> REMAIN
   REMAIN -->|"有"| LOOP
   REMAIN -->|"无"| BONUS["增加战区通关奖励"]
   BONUS --> FINAL{"是否为最后一关？"}
