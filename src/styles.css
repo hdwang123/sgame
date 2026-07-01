@@ -277,6 +277,8 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   }
   body[data-game-profile="maryJump"] .touch-actions [data-control="secondary"] strong { font-size: 17px; }
   body[data-game-profile="tetris"] #game-container { aspect-ratio: 620 / 680; }
+  body[data-game-profile="linkMatch"] #game-container { aspect-ratio: 620 / 680; }
+  body[data-game-profile="carrotDefense"] #game-container { aspect-ratio: 620 / 680; }
   body[data-game-profile="menu"] #game-container { aspect-ratio: 620 / 1040; }
   body[data-game-profile="tetris"] .brand,
   body[data-game-profile="snake"] .brand,
@@ -297,10 +299,31 @@ footer { display: flex; justify-content: space-between; padding: 14px 4px 0; col
   body[data-game-profile="carrotDefense"] .app-shell { padding-top: 2px; }
   body[data-game-profile="linkMatch"] .app-shell { padding-top: 2px; }
   body[data-game-profile="tetris"] .touch-controls__body { min-height: 190px; }
-  .touch-controls[data-profile="carrotDefense"] .touch-controls__body { justify-content: center; min-height: 82px; }
+  .touch-controls[data-profile="carrotDefense"] .touch-controls__body { justify-content: center; min-height: 78px; }
   .touch-controls[data-profile="carrotDefense"] .touch-dpad { display: none; }
-  .touch-controls[data-profile="linkMatch"] .touch-controls__body { justify-content: center; min-height: 150px; }
+  .touch-controls[data-profile="carrotDefense"] .touch-actions {
+    width: auto;
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+  .touch-controls[data-profile="carrotDefense"] .touch-actions button.touch-small {
+    width: 58px;
+    height: 58px;
+  }
+  .touch-controls[data-profile="linkMatch"] .touch-controls__body { justify-content: center; min-height: 78px; }
   .touch-controls[data-profile="linkMatch"] .touch-dpad { display: none; }
+  .touch-controls[data-profile="linkMatch"] .touch-actions {
+    width: auto;
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+  .touch-controls[data-profile="linkMatch"] .touch-actions button,
+  .touch-controls[data-profile="linkMatch"] .touch-actions button.touch-small {
+    width: 58px;
+    height: 58px;
+  }
   body[data-game-profile="tetris"] .touch-dpad { grid-template: repeat(2, 68px) / repeat(2, 68px); gap: 8px; }
   body[data-game-profile="tetris"] .touch-dpad button { width: 68px; height: 68px; }
   body[data-game-profile="tetris"] .touch-dpad [data-control="left"] { grid-area: 1 / 1; }

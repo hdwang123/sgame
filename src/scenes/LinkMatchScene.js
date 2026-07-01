@@ -6,7 +6,6 @@ import { LinkMatchGame } from '../game/link-match/LinkMatchGame.js';
 import { LINK_MATCH_RULES } from '../game/link-match/config.js';
 
 const CELL_SIZE = 62;
-const BOARD_X = 182;
 const BOARD_Y = 104;
 
 export class LinkMatchScene extends Phaser.Scene {
@@ -15,7 +14,9 @@ export class LinkMatchScene extends Phaser.Scene {
   }
 
   init() {
-    this.scale.resize(860, 680);
+    this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
+    this.scale.resize(this.isMobileLayout ? 620 : 860, 680);
+    this.boardX = this.isMobileLayout ? 62 : 182;
   }
 
   create() {
@@ -65,11 +66,11 @@ export class LinkMatchScene extends Phaser.Scene {
   drawBackdrop() {
     this.cameras.main.setBackgroundColor('#07111f');
     const grid = this.add.graphics().setDepth(-5);
-    grid.fillStyle(0x081426).fillRect(0, 0, 860, 680);
+    grid.fillStyle(0x081426).fillRect(0, 0, this.scale.width, 680);
     grid.lineStyle(1, 0x17345a, 0.35);
-    for (let x = 0; x < 860; x += 32) grid.lineBetween(x, 0, x, 680);
-    for (let y = 0; y < 680; y += 32) grid.lineBetween(0, y, 860, y);
-    this.add.rectangle(430, 352, 530, 530, 0x0b1c31, 0.94)
+    for (let x = 0; x < this.scale.width; x += 32) grid.lineBetween(x, 0, x, 680);
+    for (let y = 0; y < 680; y += 32) grid.lineBetween(0, y, this.scale.width, y);
+    this.add.rectangle(this.scale.width / 2, 352, 530, 530, 0x0b1c31, 0.94)
       .setStrokeStyle(2, 0x38d9a9, 0.45)
       .setDepth(-2);
     this.connectionGraphics = this.add.graphics().setDepth(20);
@@ -82,24 +83,25 @@ export class LinkMatchScene extends Phaser.Scene {
     this.add.text(26, 49, t('game.link.sub'), {
       fontFamily: 'Consolas', fontSize: '10px', color: '#5c9e91', letterSpacing: 2,
     });
-    this.hud = this.add.text(830, 20, '', {
+    this.hud = this.add.text(this.scale.width - 30, 20, '', {
       fontFamily: 'Consolas', fontSize: '15px', color: '#d3f9d8', align: 'right',
     }).setOrigin(1, 0);
-    const shuffleButton = this.add.rectangle(735, 67, 150, 30, 0x174d43, 0.95)
+    const shuffleX = this.scale.width - 125;
+    const shuffleButton = this.add.rectangle(shuffleX, 67, 150, 30, 0x174d43, 0.95)
       .setStrokeStyle(1, 0x63e6be, 0.8)
       .setInteractive({ useHandCursor: true });
-    this.shuffleLabel = this.add.text(735, 67, '', {
+    this.shuffleLabel = this.add.text(shuffleX, 67, '', {
       fontFamily: 'Arial Black', fontSize: '12px', color: '#e6fcf5',
     }).setOrigin(0.5);
     shuffleButton.on('pointerdown', () => this.shuffleBoard());
-    this.add.text(430, 650, t('link.controls'), {
+    this.add.text(this.scale.width / 2, 650, t('link.controls'), {
       fontFamily: 'Arial', fontSize: '12px', color: '#91a7c6',
     }).setOrigin(0.5);
-    this.message = this.add.text(430, 340, '', {
+    this.message = this.add.text(this.scale.width / 2, 340, '', {
       fontFamily: 'Arial Black', fontSize: '28px', color: '#ffffff', align: 'center',
       backgroundColor: '#06101eee', padding: { x: 32, y: 24 },
     }).setOrigin(0.5).setDepth(30).setVisible(false);
-    this.toast = this.add.text(430, 82, '', {
+    this.toast = this.add.text(this.scale.width / 2, 82, '', {
       fontFamily: 'Arial Black', fontSize: '14px', color: '#fff3bf',
       backgroundColor: '#06101edd', padding: { x: 12, y: 6 },
     }).setOrigin(0.5).setDepth(25).setVisible(false);
@@ -263,7 +265,7 @@ export class LinkMatchScene extends Phaser.Scene {
 
   positionToPoint({ row, column }) {
     return {
-      x: BOARD_X + (column - 0.5) * CELL_SIZE,
+      x: this.boardX + (column - 0.5) * CELL_SIZE,
       y: BOARD_Y + (row - 0.5) * CELL_SIZE,
     };
   }

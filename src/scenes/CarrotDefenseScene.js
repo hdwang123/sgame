@@ -16,7 +16,11 @@ export class CarrotDefenseScene extends Phaser.Scene {
   }
 
   init() {
-    this.scale.resize(860, 680);
+    this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
+    this.scale.resize(this.isMobileLayout ? 620 : 860, 680);
+    const scaleX = this.isMobileLayout ? 620 / 860 : 1;
+    this.path = CARROT_PATH.map(([x, y]) => [x * scaleX, y]);
+    this.towerSpots = CARROT_TOWER_SPOTS.map(([x, y]) => [x * scaleX, y]);
   }
 
   create() {
@@ -33,9 +37,10 @@ export class CarrotDefenseScene extends Phaser.Scene {
     this.enemyHealthGraphics = this.add.graphics().setDepth(13);
     this.towers = [];
     this.createBuildSpots();
-    this.carrot = this.add.image(806, 340, 'pixelCarrot').setDepth(8).setScale(1.25);
-    this.add.rectangle(806, 388, 82, 15, 0x3b2f1f, 0.9).setDepth(7);
-    this.carrotHealthBar = this.add.rectangle(767, 388, 78, 11, 0x69db7c).setOrigin(0, 0.5).setDepth(8);
+    const [carrotX, carrotY] = this.path[this.path.length - 1];
+    this.carrot = this.add.image(carrotX, carrotY, 'pixelCarrot').setDepth(8).setScale(1.25);
+    this.add.rectangle(carrotX, carrotY + 48, 82, 15, 0x3b2f1f, 0.9).setDepth(7);
+    this.carrotHealthBar = this.add.rectangle(carrotX - 39, carrotY + 48, 78, 11, 0x69db7c).setOrigin(0, 0.5).setDepth(8);
 
     this.createInterface();
     this.bindControls();
@@ -81,27 +86,27 @@ export class CarrotDefenseScene extends Phaser.Scene {
   drawGrassAndPath() {
     this.cameras.main.setBackgroundColor('#4d8f3a');
     const grass = this.add.graphics().setDepth(-10);
-    grass.fillStyle(0x4f913d).fillRect(0, 0, 860, 680);
+    grass.fillStyle(0x4f913d).fillRect(0, 0, this.scale.width, 680);
     for (let y = 88; y < 680; y += 24) {
-      for (let x = (y / 24) % 2 ? 8 : 18; x < 860; x += 32) {
+      for (let x = (y / 24) % 2 ? 8 : 18; x < this.scale.width; x += 32) {
         const color = (x + y) % 3 ? 0x65a84c : 0x3d7d31;
         grass.fillStyle(color, 0.65).fillRect(x, y, 5, 8).fillRect(x + 5, y + 3, 4, 5);
       }
     }
     const road = this.add.graphics().setDepth(-5);
     road.lineStyle(70, 0x6b4f32, 1);
-    for (let i = 1; i < CARROT_PATH.length; i += 1) road.lineBetween(...CARROT_PATH[i - 1], ...CARROT_PATH[i]);
+    for (let i = 1; i < this.path.length; i += 1) road.lineBetween(...this.path[i - 1], ...this.path[i]);
     road.lineStyle(56, 0xc49a63, 1);
-    for (let i = 1; i < CARROT_PATH.length; i += 1) road.lineBetween(...CARROT_PATH[i - 1], ...CARROT_PATH[i]);
+    for (let i = 1; i < this.path.length; i += 1) road.lineBetween(...this.path[i - 1], ...this.path[i]);
     road.fillStyle(0xd8b77c, 0.7);
-    for (let i = 0; i < CARROT_PATH.length; i += 1) {
-      const [x, y] = CARROT_PATH[i];
+    for (let i = 0; i < this.path.length; i += 1) {
+      const [x, y] = this.path[i];
       road.fillRect(x - 7, y - 4, 14, 8);
     }
   }
 
   createBuildSpots() {
-    CARROT_TOWER_SPOTS.forEach(([x, y], index) => {
+    this.towerSpots.forEach(([x, y], index) => {
       const ring = this.add.circle(x, y, 27, 0x173d2b, 0.75)
         .setStrokeStyle(3, 0x9be564, 0.8)
         .setInteractive({ useHandCursor: true })
@@ -140,25 +145,25 @@ export class CarrotDefenseScene extends Phaser.Scene {
   }
 
   createInterface() {
-    this.add.rectangle(430, 38, 860, 76, 0x07140f, 0.9).setScrollFactor(0).setDepth(20);
+    this.add.rectangle(this.scale.width / 2, 38, this.scale.width, 76, 0x07140f, 0.9).setScrollFactor(0).setDepth(20);
     this.add.text(24, 15, t('game.carrot'), {
       fontFamily: 'Arial Black', fontSize: '25px', color: '#d8f5a2',
     }).setDepth(21);
     this.add.text(26, 47, t('game.carrot.sub'), {
       fontFamily: 'Consolas', fontSize: '10px', color: '#74c69d', letterSpacing: 2,
     }).setDepth(21);
-    this.hud = this.add.text(830, 20, '', {
+    this.hud = this.add.text(this.scale.width - 30, 20, '', {
       fontFamily: 'Consolas', fontSize: '15px', color: '#fff3bf', align: 'right',
     }).setOrigin(1, 0).setDepth(21);
-    this.hint = this.add.text(430, 650, t('carrot.controls'), {
+    this.hint = this.add.text(this.scale.width / 2, 650, t('carrot.controls'), {
       fontFamily: 'Arial', fontSize: '12px', color: '#e9fac8',
       backgroundColor: '#07140fcc', padding: { x: 12, y: 6 },
     }).setOrigin(0.5).setDepth(20);
-    this.message = this.add.text(430, 330, '', {
+    this.message = this.add.text(this.scale.width / 2, 330, '', {
       fontFamily: 'Arial Black', fontSize: '27px', color: '#ffffff', align: 'center',
       backgroundColor: '#07140fee', padding: { x: 30, y: 22 },
     }).setOrigin(0.5).setDepth(30).setVisible(false);
-    this.toast = this.add.text(430, 92, '', {
+    this.toast = this.add.text(this.scale.width / 2, 92, '', {
       fontFamily: 'Arial Black', fontSize: '14px', color: '#fff3bf',
       backgroundColor: '#07140fdd', padding: { x: 12, y: 7 },
     }).setOrigin(0.5).setDepth(25).setVisible(false);
@@ -222,7 +227,7 @@ export class CarrotDefenseScene extends Phaser.Scene {
   }
 
   spawnEnemy(wave) {
-    const [x, y] = CARROT_PATH[0];
+    const [x, y] = this.path[0];
     this.enemies.create(x, y, 'pixelEnemy')
       .setDepth(10)
       .setData('waypoint', 1)
@@ -236,11 +241,11 @@ export class CarrotDefenseScene extends Phaser.Scene {
     this.enemies.children.iterate((enemy) => {
       if (!enemy?.active) return;
       const waypoint = enemy.getData('waypoint');
-      if (waypoint >= CARROT_PATH.length) {
+      if (waypoint >= this.path.length) {
         this.enemyReachedCarrot(enemy);
         return;
       }
-      const [targetX, targetY] = CARROT_PATH[waypoint];
+      const [targetX, targetY] = this.path[waypoint];
       const dx = targetX - enemy.x;
       const dy = targetY - enemy.y;
       const distance = Math.hypot(dx, dy);
