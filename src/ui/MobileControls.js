@@ -28,6 +28,13 @@ const PROFILES = {
     defaultMovementMode: 'joystick',
     labels: { primary: ['●', 'touch.fire'], secondary: ['1', 'touch.first'] },
   },
+  carrotDefense: {
+    controls: ['pause', 'restart', 'home'],
+  },
+  linkMatch: {
+    controls: ['primary', 'pause', 'restart', 'home'],
+    labels: { primary: ['↻', 'touch.shuffle'] },
+  },
 };
 
 class MobileControls {

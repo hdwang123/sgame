@@ -7,6 +7,8 @@ const GAMES = [
   { key: 'snake', number: '02', titleKey: 'game.snake', subKey: 'game.snake.sub', descKey: 'game.snake.desc', color: 0x51cf66, icon: '●' },
   { key: 'maryJump', number: '03', titleKey: 'game.mary', subKey: 'game.mary.sub', descKey: 'game.mary.desc', color: 0xff922b, icon: '▲' },
   { key: 'tank', number: '04', titleKey: 'game.tank', subKey: 'game.tank.sub', descKey: 'game.tank.desc', color: 0x38d9a9, icon: '◆' },
+  { key: 'carrotDefense', number: '05', titleKey: 'game.carrot', subKey: 'game.carrot.sub', descKey: 'game.carrot.desc', color: 0x94d82d, icon: '♟' },
+  { key: 'linkMatch', number: '06', titleKey: 'game.link', subKey: 'game.link.sub', descKey: 'game.link.desc', color: 0x22b8cf, icon: '✣' },
 ];
 
 export class MenuScene extends Phaser.Scene {
@@ -16,7 +18,8 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
     this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
-    this.scale.resize(this.isMobileLayout ? 620 : 860, this.isMobileLayout ? 760 : 680);
+    this.menuColumns = this.isMobileLayout ? 1 : 3;
+    this.scale.resize(this.isMobileLayout ? 620 : 860, this.isMobileLayout ? 1040 : 680);
     mobileControls.setProfile('menu');
     this.selected = 0;
     this.cards = [];
@@ -33,10 +36,10 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(this.scale.width / 2, this.scale.height - 28, t('menu.controls'), {
       fontFamily: 'Arial', fontSize: this.isMobileLayout ? '10px' : '12px', color: '#697392',
     }).setOrigin(0.5);
-    this.input.keyboard.on('keydown-LEFT', () => this.select(this.isMobileLayout ? this.selected - 1 : (this.selected % 2 === 0 ? this.selected + 1 : this.selected - 1)));
-    this.input.keyboard.on('keydown-RIGHT', () => this.select(this.isMobileLayout ? this.selected + 1 : (this.selected % 2 === 0 ? this.selected + 1 : this.selected - 1)));
-    this.input.keyboard.on('keydown-UP', () => this.select(this.isMobileLayout ? this.selected - 1 : (this.selected + 2) % 4));
-    this.input.keyboard.on('keydown-DOWN', () => this.select(this.isMobileLayout ? this.selected + 1 : (this.selected + 2) % 4));
+    this.input.keyboard.on('keydown-LEFT', () => this.select(this.selected - 1));
+    this.input.keyboard.on('keydown-RIGHT', () => this.select(this.selected + 1));
+    this.input.keyboard.on('keydown-UP', () => this.select(this.selected - this.menuColumns));
+    this.input.keyboard.on('keydown-DOWN', () => this.select(this.selected + this.menuColumns));
     this.input.keyboard.on('keydown-ENTER', () => this.scene.start(GAMES[this.selected].key));
     GAMES.forEach((game, index) => this.input.keyboard.on(`keydown-${index + 1}`, () => this.scene.start(game.key)));
     this.input.keyboard.on('keydown-L', () => this.toggleLanguage());
@@ -53,22 +56,22 @@ export class MenuScene extends Phaser.Scene {
   }
 
   createCard(game, index) {
-    const x = this.isMobileLayout ? 30 : 64 + (index % 2) * 374;
-    const y = this.isMobileLayout ? 105 + index * 143 : 138 + Math.floor(index / 2) * 226;
-    const width = this.isMobileLayout ? 560 : 350;
+    const x = this.isMobileLayout ? 30 : 35 + (index % 3) * 270;
+    const y = this.isMobileLayout ? 105 + index * 143 : 138 + Math.floor(index / 3) * 226;
+    const width = this.isMobileLayout ? 560 : 250;
     const height = this.isMobileLayout ? 128 : 198;
     const card = this.add.container(x, y);
     const bg = this.add.rectangle(0, 0, width, height, 0x101426, 0.94).setOrigin(0);
     bg.setStrokeStyle(1, 0x303856, 0.9).setInteractive({ useHandCursor: true });
     const accent = this.add.rectangle(0, 0, 5, height, game.color, 0.9).setOrigin(0);
-    const iconBg = this.add.rectangle(this.isMobileLayout ? 20 : 26, this.isMobileLayout ? 20 : 30, 62, 62, game.color, 0.14).setOrigin(0).setStrokeStyle(1, game.color, 0.5);
+    const iconBg = this.add.rectangle(this.isMobileLayout ? 20 : 20, this.isMobileLayout ? 20 : 30, 62, 62, game.color, 0.14).setOrigin(0).setStrokeStyle(1, game.color, 0.5);
     const color = `#${game.color.toString(16).padStart(6, '0')}`;
-    const icon = this.add.text(this.isMobileLayout ? 51 : 57, this.isMobileLayout ? 51 : 61, game.icon, { fontFamily: 'Arial Black', fontSize: '28px', color }).setOrigin(0.5);
+    const icon = this.add.text(this.isMobileLayout ? 51 : 51, this.isMobileLayout ? 51 : 61, game.icon, { fontFamily: 'Arial Black', fontSize: '28px', color }).setOrigin(0.5);
     const num = this.add.text(width - 24, 18, game.number, { fontFamily: 'Consolas', fontSize: '12px', color: '#5f6887' }).setOrigin(1, 0);
-    const title = this.add.text(this.isMobileLayout ? 102 : 108, this.isMobileLayout ? 22 : 32, t(game.titleKey), { fontFamily: 'Arial Black', fontSize: '20px', color: '#eef1ff' });
-    const en = this.add.text(this.isMobileLayout ? 102 : 108, this.isMobileLayout ? 55 : 65, t(game.subKey), { fontFamily: 'Arial', fontSize: '11px', color: '#8d97b9', letterSpacing: 1 });
-    const desc = this.add.text(this.isMobileLayout ? 22 : 27, this.isMobileLayout ? 96 : 126, t(game.descKey), { fontFamily: 'Arial', fontSize: '13px', color: '#7781a0' });
-    const action = this.add.text(this.isMobileLayout ? width - 24 : 27, this.isMobileLayout ? 96 : 160, t('menu.play'), { fontFamily: 'Arial', fontSize: '12px', color }).setOrigin(this.isMobileLayout ? 1 : 0, 0);
+    const title = this.add.text(this.isMobileLayout ? 102 : 94, this.isMobileLayout ? 22 : 32, t(game.titleKey), { fontFamily: 'Arial Black', fontSize: this.isMobileLayout ? '20px' : '18px', color: '#eef1ff' });
+    const en = this.add.text(this.isMobileLayout ? 102 : 94, this.isMobileLayout ? 55 : 65, t(game.subKey), { fontFamily: 'Arial', fontSize: '10px', color: '#8d97b9', letterSpacing: 1 });
+    const desc = this.add.text(this.isMobileLayout ? 22 : 20, this.isMobileLayout ? 96 : 126, t(game.descKey), { fontFamily: 'Arial', fontSize: '12px', color: '#7781a0' });
+    const action = this.add.text(this.isMobileLayout ? width - 24 : 20, this.isMobileLayout ? 96 : 160, t('menu.play'), { fontFamily: 'Arial', fontSize: '12px', color }).setOrigin(this.isMobileLayout ? 1 : 0, 0);
     card.add([bg, accent, iconBg, icon, num, en, title, desc, action]);
     bg.on('pointerover', () => this.select(index));
     bg.on('pointerdown', () => this.scene.start(game.key));

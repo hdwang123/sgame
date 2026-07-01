@@ -5,6 +5,10 @@ import { MaryJumpGame } from '../src/game/mary-jump/MaryJumpGame.js';
 import { MARY_JUMP_LEVELS } from '../src/game/mary-jump/config.js';
 import { TankGame } from '../src/game/tank/TankGame.js';
 import { ENEMY_SPAWNS, TANK_ARENA, TANK_LEVELS } from '../src/game/tank/config.js';
+import { CarrotDefenseGame } from '../src/game/carrot-defense/CarrotDefenseGame.js';
+import { CARROT_PATH, CARROT_TOWER_SPOTS, CARROT_WAVES } from '../src/game/carrot-defense/config.js';
+import { LinkMatchGame } from '../src/game/link-match/LinkMatchGame.js';
+import { LINK_MATCH_RULES } from '../src/game/link-match/config.js';
 
 const tetris = new TetrisGame(() => 0.5);
 assert.equal(tetris.board.length, 20);
@@ -92,5 +96,43 @@ TANK_LEVELS.forEach((level) => {
     assert.equal(intersectsWall, false);
   });
 });
+
+const carrot = new CarrotDefenseGame();
+assert.equal(carrot.buildTower(0), true);
+assert.equal(carrot.buildTower(0), false);
+assert.equal(carrot.upgradeTower(0), true);
+assert.equal(carrot.towers.get(0), 2);
+carrot.reward(100);
+assert.equal(carrot.upgradeTower(0), true);
+assert.equal(carrot.towers.get(0), 3);
+assert.equal(carrot.upgradeTower(0), false);
+assert.equal(carrot.damageCarrot(3), 7);
+assert.ok(CARROT_PATH.length >= 6);
+assert.ok(CARROT_TOWER_SPOTS.length >= 6);
+assert.ok(CARROT_WAVES.length >= 5);
+const carrotWin = new CarrotDefenseGame();
+CARROT_WAVES.forEach(() => carrotWin.completeWave());
+assert.equal(carrotWin.finished, true);
+assert.equal(carrotWin.won, true);
+const carrotLoss = new CarrotDefenseGame();
+carrotLoss.damageCarrot(99);
+assert.equal(carrotLoss.finished, true);
+assert.equal(carrotLoss.won, false);
+
+const linkMatch = new LinkMatchGame(() => 0.37);
+assert.equal(linkMatch.remaining, LINK_MATCH_RULES.rows * LINK_MATCH_RULES.columns);
+assert.equal(linkMatch.hasAvailablePair(), true);
+linkMatch.board.forEach((row) => row.fill(0));
+linkMatch.board[2][2] = 1;
+linkMatch.board[4][4] = 1;
+linkMatch.board[2][4] = 2;
+linkMatch.board[4][2] = 3;
+const twoTurnPath = linkMatch.findPath({ row: 2, column: 2 }, { row: 4, column: 4 });
+assert.ok(twoTurnPath);
+assert.equal(twoTurnPath.length, 4);
+linkMatch.remaining = 2;
+assert.ok(linkMatch.removePair({ row: 2, column: 2 }, { row: 4, column: 4 }));
+assert.equal(linkMatch.remaining, 0);
+assert.equal(linkMatch.score, LINK_MATCH_RULES.pairScore);
 
 console.log('All game model tests passed.');

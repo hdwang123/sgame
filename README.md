@@ -1,6 +1,6 @@
 # Phaser 网页小游戏
 
-基于 **Vite + Phaser 3 + 原生 JavaScript** 的纯网页小游戏合集，包含俄罗斯方块、贪吃蛇、玛丽跳跃和坦克大战。
+基于 **Vite + Phaser 3 + 原生 JavaScript** 的纯网页小游戏合集，包含俄罗斯方块、贪吃蛇、玛丽跳跃、坦克大战、保卫萝卜和连连看。
 
 ## 运行
 
@@ -23,6 +23,8 @@ npm run build
 - 贪吃蛇：四方向转向、暂停，并可选择慢速、标准、快速三档速度
 - 玛丽跳跃：方向键或摇杆移动，支持普通跳、大跳和暂停
 - 坦克大战：方向键或摇杆驾驶，按住开火、暂停
+- 保卫萝卜：点击空地建造炮塔，再次点击升级，抵御六波像素怪物
+- 连连看：点击两个相同图块，通过不超过两次转弯的路径连接消除
 
 每款游戏都提供触摸“重开”和“返回”按钮。俄罗斯方块在手机上使用紧凑双栏布局：棋盘在左，标题、计分和下一个方块在右，通过压缩空白区域放大整体画面。
 
@@ -44,22 +46,30 @@ src/
 │   ├── mary-jump/
 │   │   ├── MaryJumpGame.js       # 得分、踩踏判断、胜负状态
 │   │   └── config.js             # 平台、金币、敌人与关卡参数
-│   └── tank/
-│       ├── TankGame.js           # 生命、计分、射击节流、敌人决策
-│       └── config.js             # 地图、出生点、方向与数值配置
+│   ├── tank/
+│   │   ├── TankGame.js           # 生命、计分、射击节流、敌人决策
+│   │   └── config.js             # 地图、出生点、方向与数值配置
+│   ├── carrot-defense/
+│   │   ├── CarrotDefenseGame.js  # 金币、萝卜生命、炮塔和波次状态
+│   │   └── config.js             # 道路、建塔点、敌人波次与数值配置
+│   └── link-match/
+│       ├── LinkMatchGame.js      # 成对棋盘、两拐点寻路、消除与洗牌
+│       └── config.js             # 棋盘、图块、时间和计分参数
 ├── scenes/                       # Phaser 适配与表现层
 │   ├── MenuScene.js              # 游戏厅菜单
 │   ├── TetrisScene.js            # 俄罗斯方块输入与绘制
 │   ├── SnakeScene.js             # 贪吃蛇输入与绘制
 │   ├── MaryJumpScene.js          # 玛丽跳跃物理与绘制
-│   └── TankScene.js              # 坦克物理、碰撞与绘制
+│   ├── TankScene.js              # 坦克物理、碰撞与绘制
+│   ├── CarrotDefenseScene.js     # 像素塔防、路径移动与炮塔射击
+│   └── LinkMatchScene.js         # 图块点击、连接线、倒计时与洗牌
 ├── main.js                       # Phaser 初始化与场景注册
 └── styles.css                    # 网页外壳样式
 ```
 
 分层原则：`game/` 决定“游戏怎么算”，`scenes/` 决定“怎么接收输入、使用 Phaser 物理并显示出来”。
 
-平台游戏与坦克大战的原创像素素材位于 `public/assets/`。四款游戏共用 `SoundFX.js` 提供的移动、旋转、吞食、跳跃、金币、射击、爆炸和胜负音效。
+平台游戏与坦克大战的原创像素素材位于 `public/assets/`，保卫萝卜和连连看的图形由 Phaser 程序化像素绘制。六款游戏共用 `SoundFX.js` 提供的移动、旋转、吞食、跳跃、金币、射击、爆炸和胜负音效。
 
 ## 俄罗斯方块流程图
 
@@ -168,6 +178,67 @@ flowchart TB
   WAIT -->|"ESC / 返回"| MENU["回到游戏厅"]
   RETRY --> LEVEL
   FIRST --> LEVEL
+```
+
+## 保卫萝卜流程图
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
+flowchart TB
+  START["进入 CarrotDefenseScene"] --> INIT["创建草地、道路、像素萝卜<br/>建塔点、金币、生命和六个波次"]
+  INIT --> WAVE["开始当前波次<br/>按时间间隔生成像素怪物"]
+  WAVE --> LOOP["Phaser update 循环"]
+  LOOP --> INPUT{"玩家点击建塔点？"}
+  INPUT -->|"空位且金币足够"| BUILD["扣除金币并建造一级炮塔"]
+  INPUT -->|"已有炮塔且未满级"| UPGRADE["扣除金币并提升伤害、射速和范围"]
+  INPUT -->|"无操作"| MOVE["怪物沿折线路径向萝卜移动"]
+  BUILD --> MOVE
+  UPGRADE --> MOVE
+  MOVE --> TARGET["炮塔搜索射程内最靠前的怪物"]
+  TARGET -->|"找到且冷却结束"| SHOOT["发射像素子弹并结算伤害"]
+  TARGET -->|"没有目标"| EVENT
+  SHOOT --> EVENT{"本帧发生什么？"}
+  EVENT -->|"怪物生命归零"| REWARD["播放像素爆炸<br/>奖励金币并更新 HUD"]
+  EVENT -->|"怪物抵达终点"| DAMAGE["萝卜生命减一<br/>移除该怪物"]
+  EVENT -->|"无事件"| CHECK
+  REWARD --> CHECK{"本波怪物全部清除？"}
+  DAMAGE --> HEALTH{"萝卜仍有生命？"}
+  HEALTH -->|"否"| LOSE["保卫失败<br/>等待重开或返回"]
+  HEALTH -->|"是"| CHECK
+  CHECK -->|"否"| LOOP
+  CHECK -->|"是"| FINAL{"是否完成最后一波？"}
+  FINAL -->|"否"| NEXT["显示守波提示<br/>延迟后进入下一波"]
+  FINAL -->|"是"| WIN["萝卜保卫成功<br/>等待重新挑战"]
+  NEXT --> WAVE
+```
+
+## 连连看流程图
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 18, "curve": "linear"}, "themeVariables": {"fontSize": "20px"}}}%%
+flowchart TB
+  START["进入 LinkMatchScene"] --> INIT["生成 8×8 成对图块<br/>外围保留一圈空路径"]
+  INIT --> LOOP["开始 150 秒倒计时<br/>等待点击图块"]
+  LOOP --> FIRST{"是否已选择第一个图块？"}
+  FIRST -->|"否"| SELECT["高亮当前图块"]
+  FIRST -->|"是"| SAME{"两个图块类型相同？"}
+  SAME -->|"否"| SELECT
+  SAME -->|"是"| PATH{"能否用直线、一拐或两拐连接？"}
+  PATH -->|"否"| SELECT
+  PATH -->|"是"| REMOVE["绘制连接线并移除图块<br/>增加配对分数"]
+  REMOVE --> CLEAR{"棋盘已经清空？"}
+  CLEAR -->|"是"| WIN["全部消除<br/>显示得分并等待重开"]
+  CLEAR -->|"否"| MOVE{"仍存在可消除组合？"}
+  MOVE -->|"是"| LOOP
+  MOVE -->|"否"| AUTO["自动洗牌剩余图块"]
+  AUTO --> LOOP
+  LOOP --> SHUFFLE{"玩家点击洗牌或按 H？"}
+  SHUFFLE -->|"有剩余次数"| MANUAL["消耗一次洗牌次数<br/>重新排列剩余图块"]
+  SHUFFLE -->|"没有"| LOOP
+  MANUAL --> LOOP
+  LOOP --> TIME{"倒计时归零？"}
+  TIME -->|"否"| LOOP
+  TIME -->|"是"| LOSE["时间到<br/>显示得分并等待重开"]
 ```
 
 ## 贪吃蛇流程图
