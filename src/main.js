@@ -13,6 +13,11 @@ import { WhackMoleScene } from './scenes/WhackMoleScene.js';
 import './ui/MobileControls.js';
 import './styles.css';
 
+// Never show the browser's native context menu over the game. Do not stop
+// propagation: games such as Minesweeper still need the right-click event to
+// place or remove flags.
+document.addEventListener('contextmenu', (event) => event.preventDefault(), { capture: true });
+
 const userAgent = globalThis.navigator?.userAgent ?? '';
 const isMobileBrowser = globalThis.matchMedia?.('(pointer: coarse)').matches
   || /Android|iPhone|iPad|iPod|Mobile|MicroMessenger/i.test(userAgent);
