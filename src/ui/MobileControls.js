@@ -38,6 +38,10 @@ const PROFILES = {
     controls: ['primary', 'pause', 'restart', 'home'],
     labels: { primary: ['↻', 'touch.shuffle'] },
   },
+  guessWord: { controls: ['restart', 'home'] },
+  spotDifference: { controls: ['restart', 'home'] },
+  minesweeper: { controls: ['primary', 'restart', 'home'], labels: { primary: ['⚑', 'touch.flag'] } },
+  whackMole: { controls: ['restart', 'home'] },
 };
 
 class MobileControls {

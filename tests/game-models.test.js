@@ -9,6 +9,10 @@ import { CarrotDefenseGame } from '../src/game/carrot-defense/CarrotDefenseGame.
 import { CARROT_PATH, CARROT_TOWER_SPOTS, CARROT_WAVES } from '../src/game/carrot-defense/config.js';
 import { LinkMatchGame } from '../src/game/link-match/LinkMatchGame.js';
 import { LINK_MATCH_RULES } from '../src/game/link-match/config.js';
+import { GuessWordGame, WORD_PUZZLES } from '../src/game/guess-word/GuessWordGame.js';
+import { SpotDifferenceGame, SPOT_LEVELS } from '../src/game/spot-difference/SpotDifferenceGame.js';
+import { MinesweeperGame } from '../src/game/minesweeper/MinesweeperGame.js';
+import { WhackMoleGame } from '../src/game/whack-mole/WhackMoleGame.js';
 
 const tetris = new TetrisGame(() => 0.5);
 assert.equal(tetris.board.length, 20);
@@ -134,5 +138,54 @@ linkMatch.remaining = 2;
 assert.ok(linkMatch.removePair({ row: 2, column: 2 }, { row: 4, column: 4 }));
 assert.equal(linkMatch.remaining, 0);
 assert.equal(linkMatch.score, LINK_MATCH_RULES.pairScore);
+
+const guess = new GuessWordGame(() => 0.5);
+assert.equal(WORD_PUZZLES.length, 100);
+WORD_PUZZLES.forEach((puzzle) => {
+  assert.equal(puzzle.options.length, 4);
+  assert.equal(new Set(puzzle.options).size, 4);
+  assert.ok(puzzle.options.includes(puzzle.answer));
+  assert.equal(puzzle.clue.includes('结构'), false);
+  assert.equal(puzzle.clue.includes('部首'), false);
+  assert.equal(puzzle.clue.includes('笔画'), false);
+});
+assert.equal(new Set(WORD_PUZZLES.map(({ clue }) => clue)).size, 100);
+assert.equal(new Set(WORD_PUZZLES.map(({ answer }) => answer)).size, 100);
+assert.equal(WORD_PUZZLES.find(({ answer }) => answer === '告').clue, '一口咬掉牛尾巴');
+assert.equal(guess.order.length, 5);
+const guessResult = guess.answer(guess.puzzle.answer);
+assert.equal(guessResult.correct, true);
+assert.equal(guess.score, 200);
+
+const spot = new SpotDifferenceGame();
+assert.equal(SPOT_LEVELS.length, 100);
+SPOT_LEVELS.forEach((level) => assert.equal(new Set(level.differences.map(({ id }) => id)).size, 5));
+assert.equal(new Set(SPOT_LEVELS.map((level) => JSON.stringify({ theme: level.theme, objects: level.objects }))).size, 100);
+assert.equal(new Set(SPOT_LEVELS.map(({ theme }) => theme)).size, 20);
+assert.ok(SPOT_LEVELS.some(({ setting }) => setting === 'indoor'));
+assert.ok(SPOT_LEVELS.some(({ setting }) => setting === 'cartoon'));
+spot.differences.forEach(({ id }) => assert.equal(spot.find(id), true));
+assert.equal(spot.complete, true);
+spot.miss();
+assert.equal(spot.score, 5 * 250 - 25);
+assert.equal(spot.nextLevel(), true);
+assert.equal(spot.levelIndex, 1);
+assert.equal(spot.complete, false);
+
+const minesweeper = new MinesweeperGame({ random: () => 0 });
+const reveal = minesweeper.reveal(4, 4);
+assert.ok(reveal.changed.length > 0);
+assert.equal(minesweeper.cells[4][4].mine, false);
+assert.equal(minesweeper.cells.flat().filter((cell) => cell.mine).length, 10);
+const flagBoard = new MinesweeperGame();
+assert.equal(flagBoard.toggleFlag(0, 0), true);
+
+const mole = new WhackMoleGame();
+assert.equal(mole.hit('normal'), 100);
+assert.equal(mole.hit('gold'), 260);
+assert.equal(mole.score, 360);
+mole.hit('bomb');
+assert.equal(mole.score, 210);
+assert.equal(mole.combo, 0);
 
 console.log('All game model tests passed.');

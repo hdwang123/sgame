@@ -9,6 +9,10 @@ const GAMES = [
   { key: 'tank', number: '04', titleKey: 'game.tank', subKey: 'game.tank.sub', descKey: 'game.tank.desc', color: 0x38d9a9, icon: '◆' },
   { key: 'carrotDefense', number: '05', titleKey: 'game.carrot', subKey: 'game.carrot.sub', descKey: 'game.carrot.desc', color: 0x94d82d, icon: '♟' },
   { key: 'linkMatch', number: '06', titleKey: 'game.link', subKey: 'game.link.sub', descKey: 'game.link.desc', color: 0x22b8cf, icon: '✣' },
+  { key: 'guessWord', number: '07', titleKey: 'game.guess', subKey: 'game.guess.sub', descKey: 'game.guess.desc', color: 0xf06595, icon: '?' },
+  { key: 'spotDifference', number: '08', titleKey: 'game.spot', subKey: 'game.spot.sub', descKey: 'game.spot.desc', color: 0xffc078, icon: '◎' },
+  { key: 'minesweeper', number: '09', titleKey: 'game.mine', subKey: 'game.mine.sub', descKey: 'game.mine.desc', color: 0xadb5bd, icon: '✦' },
+  { key: 'whackMole', number: '10', titleKey: 'game.mole', subKey: 'game.mole.sub', descKey: 'game.mole.desc', color: 0x69db7c, icon: '!' },
 ];
 
 export class MenuScene extends Phaser.Scene {
@@ -18,7 +22,7 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
     this.isMobileLayout = globalThis.matchMedia?.('(max-width: 800px)').matches ?? false;
-    this.menuColumns = this.isMobileLayout ? 1 : 3;
+    this.menuColumns = this.isMobileLayout ? 2 : 4;
     this.scale.resize(this.isMobileLayout ? 620 : 860, this.isMobileLayout ? 1040 : 680);
     mobileControls.setProfile('menu');
     this.selected = 0;
@@ -41,7 +45,10 @@ export class MenuScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-UP', () => this.select(this.selected - this.menuColumns));
     this.input.keyboard.on('keydown-DOWN', () => this.select(this.selected + this.menuColumns));
     this.input.keyboard.on('keydown-ENTER', () => this.scene.start(GAMES[this.selected].key));
-    GAMES.forEach((game, index) => this.input.keyboard.on(`keydown-${index + 1}`, () => this.scene.start(game.key)));
+    GAMES.forEach((game, index) => {
+      const key = index === 9 ? 'ZERO' : String(index + 1);
+      this.input.keyboard.on(`keydown-${key}`, () => this.scene.start(game.key));
+    });
     this.input.keyboard.on('keydown-L', () => this.toggleLanguage());
     this.select(0);
   }
@@ -56,22 +63,24 @@ export class MenuScene extends Phaser.Scene {
   }
 
   createCard(game, index) {
-    const x = this.isMobileLayout ? 30 : 35 + (index % 3) * 270;
-    const y = this.isMobileLayout ? 105 + index * 143 : 138 + Math.floor(index / 3) * 226;
-    const width = this.isMobileLayout ? 560 : 250;
-    const height = this.isMobileLayout ? 128 : 198;
+    const column = index % this.menuColumns;
+    const row = Math.floor(index / this.menuColumns);
+    const x = this.isMobileLayout ? 24 + column * 291 : 24 + column * 207;
+    const y = this.isMobileLayout ? 105 + row * 174 : 116 + row * 174;
+    const width = this.isMobileLayout ? 275 : 190;
+    const height = 158;
     const card = this.add.container(x, y);
     const bg = this.add.rectangle(0, 0, width, height, 0x101426, 0.94).setOrigin(0);
     bg.setStrokeStyle(1, 0x303856, 0.9).setInteractive({ useHandCursor: true });
     const accent = this.add.rectangle(0, 0, 5, height, game.color, 0.9).setOrigin(0);
-    const iconBg = this.add.rectangle(this.isMobileLayout ? 20 : 20, this.isMobileLayout ? 20 : 30, 62, 62, game.color, 0.14).setOrigin(0).setStrokeStyle(1, game.color, 0.5);
+    const iconBg = this.add.rectangle(16, 18, 52, 52, game.color, 0.14).setOrigin(0).setStrokeStyle(1, game.color, 0.5);
     const color = `#${game.color.toString(16).padStart(6, '0')}`;
-    const icon = this.add.text(this.isMobileLayout ? 51 : 51, this.isMobileLayout ? 51 : 61, game.icon, { fontFamily: 'Arial Black', fontSize: '28px', color }).setOrigin(0.5);
+    const icon = this.add.text(42, 44, game.icon, { fontFamily: 'Arial Black', fontSize: '24px', color }).setOrigin(0.5);
     const num = this.add.text(width - 24, 18, game.number, { fontFamily: 'Consolas', fontSize: '12px', color: '#5f6887' }).setOrigin(1, 0);
-    const title = this.add.text(this.isMobileLayout ? 102 : 94, this.isMobileLayout ? 22 : 32, t(game.titleKey), { fontFamily: 'Arial Black', fontSize: this.isMobileLayout ? '20px' : '18px', color: '#eef1ff' });
-    const en = this.add.text(this.isMobileLayout ? 102 : 94, this.isMobileLayout ? 55 : 65, t(game.subKey), { fontFamily: 'Arial', fontSize: '10px', color: '#8d97b9', letterSpacing: 1 });
-    const desc = this.add.text(this.isMobileLayout ? 22 : 20, this.isMobileLayout ? 96 : 126, t(game.descKey), { fontFamily: 'Arial', fontSize: '12px', color: '#7781a0' });
-    const action = this.add.text(this.isMobileLayout ? width - 24 : 20, this.isMobileLayout ? 96 : 160, t('menu.play'), { fontFamily: 'Arial', fontSize: '12px', color }).setOrigin(this.isMobileLayout ? 1 : 0, 0);
+    const title = this.add.text(80, 20, t(game.titleKey), { fontFamily: 'Arial Black', fontSize: this.isMobileLayout ? '18px' : '16px', color: '#eef1ff' });
+    const en = this.add.text(80, 49, t(game.subKey), { fontFamily: 'Arial', fontSize: '9px', color: '#8d97b9' });
+    const desc = this.add.text(17, 92, t(game.descKey), { fontFamily: 'Arial', fontSize: '11px', color: '#7781a0', wordWrap: { width: width - 34 } });
+    const action = this.add.text(width - 17, 132, t('menu.play'), { fontFamily: 'Arial', fontSize: '11px', color }).setOrigin(1, 0);
     card.add([bg, accent, iconBg, icon, num, en, title, desc, action]);
     bg.on('pointerover', () => this.select(index));
     bg.on('pointerdown', () => this.scene.start(game.key));

@@ -6,6 +6,10 @@ import { MaryJumpScene } from './scenes/MaryJumpScene.js';
 import { TankScene } from './scenes/TankScene.js';
 import { CarrotDefenseScene } from './scenes/CarrotDefenseScene.js';
 import { LinkMatchScene } from './scenes/LinkMatchScene.js';
+import { GuessWordScene } from './scenes/GuessWordScene.js';
+import { SpotDifferenceScene } from './scenes/SpotDifferenceScene.js';
+import { MinesweeperScene } from './scenes/MinesweeperScene.js';
+import { WhackMoleScene } from './scenes/WhackMoleScene.js';
 import './ui/MobileControls.js';
 import './styles.css';
 
@@ -22,7 +26,8 @@ const config = {
   width: 860,
   height: 680,
   backgroundColor: '#090b15',
-  scene: [MenuScene, TetrisScene, SnakeScene, MaryJumpScene, TankScene, CarrotDefenseScene, LinkMatchScene],
+  scene: [MenuScene, TetrisScene, SnakeScene, MaryJumpScene, TankScene, CarrotDefenseScene, LinkMatchScene,
+    GuessWordScene, SpotDifferenceScene, MinesweeperScene, WhackMoleScene],
   loader: {
     // Avoid the default XHR Blob -> Image copy. Direct image loading lowers
     // peak memory use and is more reliable in Safari and embedded WebViews.
